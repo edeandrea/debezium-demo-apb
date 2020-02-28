@@ -7,6 +7,8 @@ The database credentials are stored in a `Secret` and then [mounted into the Kaf
 ## Deployed Resource URLs
 All the below resource URLs are suffixed with the apps url of the cluster (i.e. for an RHPDS environment, `apps.cluster-##GUID##.##GUID##.example.opentlc.com`).
 
+- OpenShift Console
+    - https://console-openshift-console.##CLUSTER_SUFFIX##/k8s/cluster/projects/demo
 - [Kafdrop](https://github.com/obsidiandynamics/kafdrop)
     - http://kafdrop-demo.##CLUSTER_SUFFIX##
 - [Demo App](https://github.com/edeandrea/summit-lab-spring-music/tree/pipeline)
