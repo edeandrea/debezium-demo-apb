@@ -1,0 +1,136 @@
+- name: Provision Demo
+  block:
+    - name: "Log into OpenShift as admin"
+      k8s_auth:
+        username: "{{ ocp_admin }}"
+        password: "{{ ocp_admin_pwd }}"
+      register: k8s_auth_results
+
+    - name: Get Cluster Wildcard domain
+      include: ../../common/getClusterWildcardDomain.yml
+
+    - name: Log out of OpenShift admin user
+      when: k8s_auth_results.k8s_auth.api_key is defined
+      k8s_auth:
+        state: absent
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+
+    - name: "Log into OpenShift as project user"
+      k8s_auth:
+        username: "{{ ocp_proj_user }}"
+        password: "{{ ocp_proj_user_pwd }}"
+      register: k8s_auth_results
+
+    - name: "Create {{ proj_nm_demo }} project if it doesn't already exist"
+      include: ../../common/createProject.yml
+      vars:
+        proj_nm: "{{ proj_nm_demo }}"
+
+    - name: "Check if {{ proj_nm_demo }} DB resources already exist"
+      k8s_info:
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+        kind: DeploymentConfig
+        api_version: apps.openshift.io/v1
+        namespace: "{{ proj_nm_demo }}"
+        name: summit-lab-spring-music-db
+      register: demo_app_db_dc
+
+    - name: "Create {{ proj_nm_demo }} DB resources if needed"
+      include: ../../common/processTemplate.yml
+      vars:
+        base_url: "{{ templates_base_url }}"
+        template_filename: "{{ template_nm_db }}"
+        template_processed_filename: "{{ template_nm_processed_db }}"
+        proj_nm: "{{ proj_nm_demo }}"
+      when: demo_app_db_dc.resources|length == 0
+
+    - name: Check if AMQ Streams already provisioned
+      k8s_info:
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+        kind: Deployment
+        api_version: apps/v1
+        namespace: "{{ proj_nm_demo }}"
+        name: db-events-connect
+      register: amq_streams_deployment
+
+    - name: Deploy AMQ Streams if needed
+      include: ../../common/processTemplate.yml
+      vars:
+        base_url: "{{ templates_base_url }}"
+        template_filename: "{{ template_nm_amq_streams }}"
+        template_processed_filename: "{{ template_nm_processed_amq_streams }}"
+        proj_nm: "{{ proj_nm_demo }}"
+      when: amq_streams_deployment.resources|length == 0
+
+    - name: Check if Kafdrop already provisioned
+      k8s_info:
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+        kind: DeploymentConfig
+        api_version: apps.openshift.io/v1
+        namespace: "{{ proj_nm_demo }}"
+        name: db-events-kafdrop
+      register: kafdrop_dc
+
+    - name: Deploy Kafdrop if needed
+      include: ../../common/processResources.yml
+      vars:
+        base_url: "{{ templates_base_url }}"
+        filename: "{{ file_nm_kafdrop }}"
+        proj_nm: "{{ proj_nm_demo }}"
+      when: kafdrop_dc.resources|length == 0
+
+    - name: Wait for Kafka Connect to become available
+      uri:
+        url: "http://db-events-connect-api-{{ proj_nm_demo }}.{{ cluster_wildcard_domain.resources[0].status.domain }}/connectors"
+      register: kafka_connect_url
+      until: kafka_connect_url.status == 200
+      retries: 50
+      delay: 10
+
+    - name: Download Debezium connector config json
+      include: ../../common/downloadFile.yml
+      vars:
+        base_url: "{{ templates_base_url }}"
+        filename: "{{ file_nm_debezium_connector_config }}"
+      when: kafka_connect_url.json|length == 0
+
+    - name: Install Debezium Connector
+      uri:
+        url: "http://db-events-connect-api-{{ proj_nm_demo }}.{{ cluster_wildcard_domain.resources[0].status.domain }}/connectors"
+        method: POST
+        src: "/tmp/{{ file_nm_debezium_connector_config }}"
+        status_code: 201
+        body_format: json
+      when: kafka_connect_url.json|length == 0
+
+    - name: Delete Debezium connector config json
+      include: ../../common/deleteDownloadedFile.yml
+      vars:
+        filename: "{{ file_nm_debezium_connector_config }}"
+      when: kafka_connect_url.json|length == 0
+
+    - name: Check if application is already deployed
+      k8s_info:
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+        api_version: apps.openshift.io/v1
+        kind: DeploymentConfig
+        namespace: "{{ proj_nm_demo }}"
+        name: spring-music
+      register: spring_music_dc
+
+    - name: Deploy application if needed
+      k8s:
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+        namespace: "{{ proj_nm_demo }}"
+        definition: "{{ lookup('template', '../objects/app.yml') }}"
+      when: spring_music_dc.resources|length == 0
+
+    - debug:
+        msg: "Provisioning has completed. Please go to https://console-openshift-console.{{ cluster_wildcard_domain.resources[0].status.domain }}/k8s/cluster/projects/{{ proj_nm_demo }} to see the project. It may take a while for the application to finish building and deploying."
+
+  always:
+    - name: If OpenShift login succeeded try to log out
+      when: k8s_auth_results.k8s_auth.api_key is defined
+      k8s_auth:
+        state: absent
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"

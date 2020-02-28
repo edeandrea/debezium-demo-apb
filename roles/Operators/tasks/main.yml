@@ -1,0 +1,33 @@
+- name: Provision required operators
+  block:
+    - name: "Log into OpenShift as admin"
+      k8s_auth:
+        username: "{{ ocp_admin }}"
+        password: "{{ ocp_admin_pwd }}"
+      register: k8s_auth_results
+
+    - name: Install AMQ Streams Operator
+      k8s:
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+        namespace: "{{ proj_nm_rh_operators }}"
+        definition: "{{ lookup('template', '../objects/amq-streams-operator.yml') }}"
+
+    - name: Wait for AMQ Streams operator to start
+      k8s_info:
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+        namespace: "{{ proj_nm_rh_operators }}"
+        api_version: v1
+        kind: Pod
+        label_selectors:
+          - name = amq-streams-cluster-operator
+      register: amq_streams_cluster_operator_pod
+      until: amq_streams_cluster_operator_pod.resources is defined and amq_streams_cluster_operator_pod.resources|length == 1 and amq_streams_cluster_operator_pod.resources[0].status.containerStatuses is defined and amq_streams_cluster_operator_pod.resources[0].status.containerStatuses|length == 1 and amq_streams_cluster_operator_pod.resources[0].status.containerStatuses[0] is defined and amq_streams_cluster_operator_pod.resources[0].status.containerStatuses[0].ready == true
+      retries: 50
+      delay: 10
+
+  always:
+    - name: If OpenShift login succeeded try to log out
+      when: k8s_auth_results.k8s_auth.api_key is defined
+      k8s_auth:
+        state: absent
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"

@@ -1,0 +1,8 @@
+- name: Download resource file {{ filename }}
+  include: ./downloadFile.yml
+
+- name: Deploy resource file {{ filename }}
+  include: ./deployDownloadedFile.yml
+
+- name: Delete downloaded files
+  include: ./deleteDownloadedFile.yml

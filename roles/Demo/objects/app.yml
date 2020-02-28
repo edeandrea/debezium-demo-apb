@@ -1,0 +1,169 @@
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  labels:
+    app: spring-music
+  name: default_view
+roleRef:
+  name: view
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+subjects:
+  - kind: ServiceAccount
+    name: default
+---
+kind: ImageStream
+apiVersion: image.openshift.io/v1
+metadata:
+  name: spring-music
+  labels:
+    app: spring-music
+spec:
+  tags:
+    - name: latest
+---
+kind: BuildConfig
+apiVersion: build.openshift.io/v1
+metadata:
+  name: spring-music
+  labels:
+    app: spring-music
+    app.kubernetes.io/component: spring-music
+    app.kubernetes.io/instance: spring-music
+    app.kubernetes.io/name: java
+    app.kubernetes.io/part-of: spring-music
+    app.openshift.io/runtime: java
+    app.openshift.io/runtime-version: '8'
+  annotations:
+    app.openshift.io/vcs-ref: pipeline
+    app.openshift.io/vcs-uri: 'https://github.com/edeandrea/summit-lab-spring-music'
+spec:
+  runPolicy: Serial
+  output:
+    to:
+      kind: ImageStreamTag
+      name: 'spring-music:latest'
+  strategy:
+    type: Source
+    sourceStrategy:
+      from:
+        kind: ImageStreamTag
+        name: 'java:8'
+        namespace: openshift
+  source:
+    type: Git
+    git:
+      uri: 'https://github.com/edeandrea/summit-lab-spring-music'
+      ref: pipeline
+    contextDir: /
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChange: {}
+---
+kind: DeploymentConfig
+apiVersion: apps.openshift.io/v1
+metadata:
+  labels:
+    app: spring-music
+    app.kubernetes.io/component: spring-music
+    app.kubernetes.io/instance: spring-music
+    app.kubernetes.io/name: java
+    app.kubernetes.io/part-of: spring-music
+    app.openshift.io/runtime: java
+    app.openshift.io/runtime-version: '8'
+  name: spring-music
+  annotations:
+    app.openshift.io/connects-to: summit-lab-spring-music-db
+    app.openshift.io/vcs-ref: pipeline
+    app.openshift.io/vcs-uri: "https://github.com/edeandrea/summit-lab-spring-music"
+spec:
+  replicas: 1
+  selector:
+    deploymentconfig: spring-music
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: spring-music
+        deploymentconfig: spring-music
+    spec:
+      containers:
+        - image: spring-music:latest
+          imagePullPolicy: Always
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /actuator/health
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+          name: spring-music
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+            - containerPort: 8443
+              protocol: TCP
+            - containerPort: 8778
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /actuator/health
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+          - spring-music
+        from:
+          kind: ImageStreamTag
+          name: spring-music:latest
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: spring-music
+  labels:
+    app: spring-music
+spec:
+  ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: 8443-tcp
+      port: 8443
+      protocol: TCP
+      targetPort: 8443
+    - name: 8778-tcp
+      port: 8778
+      protocol: TCP
+      targetPort: 8778
+  selector:
+    deploymentconfig: spring-music
+---
+kind: Route
+apiVersion: v1
+metadata:
+  labels:
+    app: spring-music
+  name: spring-music
+spec:
+  port:
+    targetPort: 8080-tcp
+  to:
+    kind: Service
+    name: spring-music
+    weight: 100

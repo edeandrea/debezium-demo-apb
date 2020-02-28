@@ -1,0 +1,2 @@
+---
+  - shell: "oc login {{ ocp_api_url }} --token={{ k8s_auth_results.k8s_auth.api_key }} --insecure-skip-tls-verify=true && {{ oc_command }}"

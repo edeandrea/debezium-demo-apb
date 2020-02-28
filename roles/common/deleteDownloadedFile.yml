@@ -1,0 +1,4 @@
+- name: "Delete downloaded file /tmp/{{ filename }}"
+  file:
+    state: absent
+    path: "/tmp/{{ filename }}"

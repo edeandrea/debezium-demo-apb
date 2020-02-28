@@ -1,0 +1,9 @@
+---
+  - name: Get Cluster Wildcard domain
+    k8s_info:
+      api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+      validate_certs: no
+      kind: IngressController
+      name: default
+      namespace: openshift-ingress-operator
+    register: cluster_wildcard_domain

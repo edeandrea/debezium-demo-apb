@@ -1,0 +1,22 @@
+- name: Download template {{ template_filename }}
+  include: ./downloadFile.yml
+  vars:
+    filename: "{{ template_filename }}"
+
+- name: Process template {{ template_filename }}
+  include: ./runOcShell.yml
+  vars:
+    oc_command: "oc project {{ proj_nm }} && oc process -f /tmp/{{ template_filename }} -o yaml > /tmp/{{ template_processed_filename }}"
+
+- name: Deploy processed template {{ template_processed_filename }}
+  include: ./deployDownloadedFile.yml
+  vars:
+    filename: "{{ template_processed_filename }}"
+
+- name: Delete template files
+  include: ./deleteDownloadedFile.yml
+  vars:
+    filename: "{{ item }}"
+  loop:
+    - "{{ template_filename }}"
+    - "{{ template_processed_filename }}"

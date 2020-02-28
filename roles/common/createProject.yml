@@ -1,0 +1,8 @@
+---
+  - name: "Create {{ proj_nm }} project if it doesn't already exist"
+    k8s:
+      api_version: project.openshift.io/v1
+      kind: Project
+      name: "{{ proj_nm }}"
+      api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+      validate_certs: no

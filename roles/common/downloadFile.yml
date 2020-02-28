@@ -1,0 +1,4 @@
+- name: "Download file {{ filename }}"
+  get_url:
+    url: "{{ base_url }}/{{ filename }}"
+    dest: "/tmp/{{ filename }}"
