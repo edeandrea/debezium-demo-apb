@@ -92,6 +92,24 @@ spec:
       containers:
         - image: spring-music:latest
           imagePullPolicy: Always
+          env:
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: summit-lab-spring-music-db
+                  key: database-name
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: summit-lab-spring-music-db
+                  key: database-user
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: summit-lab-spring-music-db
+                  key: database-password
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:mysql://summit-lab-spring-music-db/$(DB_NAME)
           livenessProbe:
             failureThreshold: 3
             httpGet:
