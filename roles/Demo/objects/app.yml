@@ -18,48 +18,19 @@ metadata:
   name: spring-music
   labels:
     app: spring-music
-spec:
-  tags:
-    - name: latest
----
-kind: BuildConfig
-apiVersion: build.openshift.io/v1
-metadata:
-  name: spring-music
-  labels:
-    app: spring-music
     app.kubernetes.io/component: spring-music
     app.kubernetes.io/instance: spring-music
-    app.kubernetes.io/name: java
     app.kubernetes.io/part-of: spring-music
-    app.openshift.io/runtime: java
-    app.openshift.io/runtime-version: '8'
-  annotations:
-    app.openshift.io/vcs-ref: pipeline
-    app.openshift.io/vcs-uri: 'https://github.com/edeandrea/summit-lab-spring-music'
 spec:
-  runPolicy: Serial
-  output:
-    to:
-      kind: ImageStreamTag
-      name: 'spring-music:latest'
-  strategy:
-    type: Source
-    sourceStrategy:
+  lookupPolicy:
+    local: false
+  tags:
+    - name: latest
+      annotations:
+        openshift.io/imported-from: 'quay.io/edeandrea/spring-music:latest'
       from:
-        kind: ImageStreamTag
-        name: 'java:8'
-        namespace: openshift
-  source:
-    type: Git
-    git:
-      uri: 'https://github.com/edeandrea/summit-lab-spring-music'
-      ref: pipeline
-    contextDir: /
-  triggers:
-    - type: ConfigChange
-    - type: ImageChange
-      imageChange: {}
+        kind: DockerImage
+        name: quay.io/edeandrea/spring-music:latest
 ---
 kind: DeploymentConfig
 apiVersion: apps.openshift.io/v1

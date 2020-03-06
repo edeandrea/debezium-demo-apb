@@ -6,6 +6,12 @@
         password: "{{ ocp_admin_pwd }}"
       register: k8s_auth_results
 
+    - name: Install Container Security Operator
+      k8s:
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+        namespace: "{{ proj_nm_rh_operators }}"
+        definition: "{{ lookup('template', '../objects/container-security-operator.yml') }}"
+
     - name: Install AMQ Streams Operator
       k8s:
         api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
