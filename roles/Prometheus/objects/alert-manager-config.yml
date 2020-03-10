@@ -1,0 +1,7 @@
+kind: Secret
+apiVersion: v1
+type: Opaque
+metadata:
+  name: alertmanager-alertmanager
+data:
+  alertmanager.yaml: "{{ lookup('file', './roles/Prometheus/objects/alert-manager-config-data.txt') | b64encode }}"

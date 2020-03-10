@@ -8,6 +8,25 @@
       validate_certs: no
   vars:
     ocp_admin: opentlc-mgr
+    proj_nm_demo: demo
+    ocp_proj_user: user1
+    ocp_proj_user_pwd: openshift
   roles:
-    - Operators
-    - Demo
+    - role: Operators
+      tags:
+        - operators
+        - required
+    - role: Demo
+      tags:
+        - demo
+        - required
+    - role: Prometheus
+      tags:
+        - prometheus
+        - monitoring
+        - optional
+    - role: Grafana
+      tags:
+        - grafana
+        - monitoring
+        - optional

@@ -18,6 +18,38 @@
         namespace: "{{ proj_nm_rh_operators }}"
         definition: "{{ lookup('template', '../objects/amq-streams-operator.yml') }}"
 
+    - name: Install Prometheus Operator
+      k8s:
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+        namespace: "{{ proj_nm_rh_operators }}"
+        definition: "{{ lookup('template', '../objects/prometheus-operator.yml') }}"
+
+    - name: Clone Grafana git repo
+      git:
+        repo: "{{ grafana_operator_git_repo }}"
+        version: "{{ grafana_operator_git_tag }}"
+        dest: "{{ grafana_operator_local_dir }}"
+
+    - name: Install Grafana Operator CRDs
+      include: ../../common/runOcShell.yml
+      vars:
+        oc_command: "oc create -f {{ grafana_operator_local_dir }}/deploy/crds -n {{ proj_nm_demo }}"
+
+    - name: Install Grafana Operator Roles
+      include: ../../common/runOcShell.yml
+      vars:
+        oc_command: "oc create -f {{ grafana_operator_local_dir }}/deploy/roles -n {{ proj_nm_demo }}"
+
+    - name: Install Grafana Cluster Roles
+      include: ../../common/runOcShell.yml
+      vars:
+        oc_command: "oc create -f {{ grafana_operator_local_dir }}/deploy/cluster_roles"
+
+    - name: Install Grafana Operator
+      include: ../../common/runOcShell.yml
+      vars:
+        oc_command: "oc create -f {{ grafana_operator_local_dir }}/deploy/operator.yaml -n {{ proj_nm_demo }}"
+
     - name: Wait for AMQ Streams operator to start
       k8s_info:
         api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
@@ -37,3 +69,8 @@
       k8s_auth:
         state: absent
         api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+
+    - name: Delete Grafana git repo
+      file:
+        state: absent
+        path: "{{ grafana_operator_local_dir }}"

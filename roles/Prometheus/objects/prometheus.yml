@@ -1,0 +1,62 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  name: prometheus
+  namespace: "{{ proj_nm_demo }}"
+  labels:
+    app: prometheus
+    app.kubernetes.io/part-of: prometheus
+  annotations:
+    app.openshift.io/connects-to: db-events-kafka
+spec:
+  replicas: 1
+  serviceAccountName: prometheus-server
+  serviceMonitorSelector:
+    matchLabels:
+      app: spring-music-cdc
+  resources:
+    requests:
+      memory: 400Mi
+  enableAdminAPI: false
+  ruleSelector:
+    matchLabels:
+      role: alert-rules
+      app: spring-music-cdc
+  alerting:
+    alertmanagers:
+    - namespace: "{{ proj_nm_demo }}"
+      name: alertmanager
+      port: alertmanager
+  additionalScrapeConfigs:
+    name: additional-scrape-configs
+    key: prometheus-additional.yml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  labels:
+    app: prometheus
+spec:
+  ports:
+    - name: prometheus
+      port: 9090
+      targetPort: 9090
+      protocol: TCP
+  selector:
+    prometheus: prometheus
+  type: ClusterIP
+---
+kind: Route
+apiVersion: v1
+metadata:
+  labels:
+    app: prometheus
+  name: prometheus
+spec:
+  port:
+    targetPort: prometheus
+  to:
+    kind: Service
+    name: prometheus
+    weight: 100

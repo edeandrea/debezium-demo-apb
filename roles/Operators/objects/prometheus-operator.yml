@@ -1,0 +1,93 @@
+apiVersion: project.openshift.io/v1
+kind: Project
+metadata:
+  name: "{{ proj_nm_demo }}"
+spec:
+  finalizers:
+    - kubernetes
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: "{{ ocp_proj_user }}-{{ proj_nm_demo }}"
+  namespace: "{{ proj_nm_demo }}"
+subjects:
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: "{{ ocp_proj_user }}"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: "{{ proj_nm_demo }}-group"
+  namespace: "{{ proj_nm_demo }}"
+spec:
+  targetNamespaces:
+    - "{{ proj_nm_demo }}"
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: prometheus
+  namespace: "{{ proj_nm_demo }}"
+  labels:
+    app.kubernetes.io/part-of: prometheus
+    app: prometheus
+spec:
+  channel: beta
+  installPlanApproval: Automatic
+  name: prometheus
+  source: community-operators
+  sourceNamespace: openshift-marketplace
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus-server
+  namespace: "{{ proj_nm_demo }}"
+  labels:
+    app: spring-music-cdc
+rules:
+  - apiGroups: [""]
+    resources:
+      - nodes
+      - nodes/proxy
+      - services
+      - endpoints
+      - pods
+    verbs: ["get", "list", "watch"]
+  - apiGroups:
+      - extensions
+    resources:
+      - ingresses
+    verbs: ["get", "list", "watch"]
+  - nonResourceURLs: ["/metrics"]
+    verbs: ["get"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus-server
+  namespace: "{{ proj_nm_demo }}"
+  labels:
+    app: spring-music-cdc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+namespace: "{{ proj_nm_demo }}"
+metadata:
+  name: prometheus-server
+  labels:
+    app: spring-music-cdc
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus-server
+subjects:
+  - kind: ServiceAccount
+    name: prometheus-server
+    namespace: "{{ proj_nm_demo }}"

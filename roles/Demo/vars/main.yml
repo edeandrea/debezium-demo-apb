@@ -1,6 +1,3 @@
-ocp_proj_user: user1
-ocp_proj_user_pwd: openshift
-proj_nm_demo: demo
 templates_base_url: https://raw.githubusercontent.com/edeandrea/summit-lab-spring-music/pipeline/misc/templates
 template_nm_db: prod-template-ocp4.yml
 template_nm_processed_db: prod-ocp4.yml

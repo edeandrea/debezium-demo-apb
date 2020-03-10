@@ -13,6 +13,10 @@ All the below resource URLs are suffixed with the apps url of the cluster (i.e. 
     - http://kafdrop-demo.##CLUSTER_SUFFIX##
 - [Demo App](https://github.com/edeandrea/summit-lab-spring-music/tree/pipeline)
     - http://spring-music-demo.##CLUSTER_SUFFIX##
+- Prometheus
+    - http://prometheus-demo.##CLUSTER_SUFFIX##
+- Grafana
+    - http://grafana-route-demo.##CLUSTER_SUFFIX##
 
 ## Running the playbook
 To run this you would do something like

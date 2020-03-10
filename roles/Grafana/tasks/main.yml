@@ -1,0 +1,57 @@
+- name: Provision Grafana
+  block:
+    - name: "Log into OpenShift as project user"
+      k8s_auth:
+        username: "{{ ocp_proj_user }}"
+        password: "{{ ocp_proj_user_pwd }}"
+      register: k8s_auth_results
+
+    - name: Wait for Grafana Operator to spin up
+      k8s_info:
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+        namespace: "{{ proj_nm_demo }}"
+        api_version: apps/v1
+        kind: Deployment
+        name: grafana-operator
+      register: grafana_operator_deployment
+      until: grafana_operator_deployment.resources is defined and grafana_operator_deployment.resources|length == 1 and grafana_operator_deployment.resources[0].status.readyReplicas is defined and grafana_operator_deployment.resources[0].status.readyReplicas == 1 and grafana_operator_deployment.resources[0].status.availableReplicas is defined and grafana_operator_deployment.resources[0].status.availableReplicas == 1
+      retries: 50
+      delay: 10
+
+    - name: Check if Grafana is already deployed
+      k8s_info:
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+        api_version: v1
+        kind: Service
+        namespace: "{{ proj_nm_demo }}"
+        name: grafana-service
+      register: grafana_svc
+
+    - name: Deploy Grafana Data Source
+      k8s:
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+        namespace: "{{ proj_nm_demo }}"
+        definition: "{{ lookup('template', '../objects/grafana-datasource.yml') }}"
+      when: grafana_svc.resources|length == 0
+
+    - name: "Deploy Grafana Dashboard"
+      k8s:
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+        namespace: "{{ proj_nm_demo }}"
+        definition: "{{ lookup('file', '../objects/grafana-dashboard-' + item + '.yml') }}"
+      when: grafana_svc.resources|length == 0
+      loop: "{{ grafana_dashboards }}"
+
+    - name: Deploy Grafana
+      k8s:
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+        namespace: "{{ proj_nm_demo }}"
+        definition: "{{ lookup('file', '../objects/grafana.yml') }}"
+      when: grafana_svc.resources|length == 0
+
+  always:
+    - name: If OpenShift login succeeded try to log out
+      when: k8s_auth_results.k8s_auth.api_key is defined
+      k8s_auth:
+        state: absent
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
