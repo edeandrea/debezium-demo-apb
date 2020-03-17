@@ -50,3 +50,5 @@ This playbook also makes some assumptions about some things within the cluster. 
 - [Kafdrop Template](roles/Demo/objects/kafdrop.yml)
 - [Debezium Connector Config](roles/Demo/objects/debezium-connector-config.json)
 - [Red Hat SSO Realm Config](roles/Demo/objects/spring-music-cdc-realm.json)
+- [Guide used](https://github.com/sigreen/amq-streams-oauth-ldap) for help in setting this all up
+    - Thanks @sigreen!
