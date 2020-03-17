@@ -6,7 +6,7 @@
 - name: Process template {{ template_filename }}
   include: ./runOcShell.yml
   vars:
-    oc_command: "oc project {{ proj_nm }} && oc process -f /tmp/{{ template_filename }} -o yaml > /tmp/{{ template_processed_filename }}"
+    oc_command: "oc project {{ proj_nm }} && oc process -f {{ temp_dir }}/{{ template_filename }} -o yaml > {{ temp_dir }}/{{ template_processed_filename }}"
 
 - name: Deploy processed template {{ template_processed_filename }}
   include: ./deployDownloadedFile.yml

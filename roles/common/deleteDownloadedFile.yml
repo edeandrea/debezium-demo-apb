@@ -1,4 +1,4 @@
-- name: "Delete downloaded file /tmp/{{ filename }}"
+- name: "Delete downloaded file {{ temp_dir }}/{{ filename }}"
   file:
     state: absent
-    path: "/tmp/{{ filename }}"
+    path: "{{ temp_dir }}/{{ filename }}"

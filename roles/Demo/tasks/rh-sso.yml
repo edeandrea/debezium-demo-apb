@@ -1,0 +1,87 @@
+- name: "Check if RH-SSO already deployed"
+  k8s_info:
+    api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+    kind: DeploymentConfig
+    api_version: apps.openshift.io/v1
+    namespace: "{{ proj_nm_demo }}"
+    name: sso
+  register: rh_sso_dc
+
+- name: "Deploy RH-SSO"
+  include: ../../common/runOcShell.yml
+  vars:
+    oc_command: "oc -n {{ proj_nm_demo }} new-app --name=rh-sso --labels='app.kubernetes.io/part-of=rh-sso,app.kubernetes.io/name=rh-sso' --template=sso73-postgresql-persistent -p SSO_ADMIN_USERNAME={{ rh_sso.admin.username }} -p SSO_ADMIN_PASSWORD={{ rh_sso.admin.password }} -p SSO_SERVICE_USERNAME={{ rh_sso.service.username }} -p SSO_SERVICE_PASSWORD={{ rh_sso.service.password }} -p SSO_TRUSTSTORE=truststore.jks -p SSO_TRUSTSTORE_PASSWORD=password -p SSO_TRUSTSTORE_SECRET={{ cert_secret_name }} -p HTTPS_SECRET={{ cert_secret_name }} -p HTTPS_KEYSTORE=keystore.jks -p HTTPS_NAME=jboss -p HTTPS_PASSWORD=password -p JGROUPS_ENCRYPT_SECRET={{ cert_secret_name }} -p JGROUPS_ENCRYPT_KEYSTORE=jgroups.jceks -p JGROUPS_ENCRYPT_NAME=secret-key -p JGROUPS_ENCRYPT_PASSWORD=password -p POSTGRESQL_IMAGE_STREAM_TAG=9.6 -e JAVA_OPTS_APPEND='-Dkeycloak.profile.feature.scripts=enabled -Dkeycloak.profile.feature.upload_scripts=enabled'"
+  when: rh_sso_dc.resources|length == 0
+
+- name: "Wait for RH-SSO to spin up"
+  k8s_info:
+    api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+    namespace: "{{ proj_nm_demo }}"
+    api_version: apps.openshift.io/v1
+    kind: DeploymentConfig
+    name: sso
+  register: rh_sso_deployment
+  until: rh_sso_deployment.resources is defined and rh_sso_deployment.resources|length == 1 and rh_sso_deployment.resources[0].status.readyReplicas is defined and rh_sso_deployment.resources[0].status.readyReplicas == 1 and rh_sso_deployment.resources[0].status.availableReplicas is defined and rh_sso_deployment.resources[0].status.availableReplicas == 1
+  retries: 50
+  delay: 10
+
+- name: "Add additional metadata to RH-SSO instance"
+  k8s:
+    api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+    namespace: "{{ proj_nm_demo }}"
+    name: sso
+    api_version: apps.openshift.io/v1
+    kind: DeploymentConfig
+    definition:
+      metadata:
+        labels:
+          app.openshift.io/runtime: java
+          app.openshift.io/runtime-version: '8'
+        annotations:
+          app.openshift.io/connects-to: sso-postgresql
+
+- name: "Add additional metadata to RH-SSO postgresql instance"
+  k8s:
+    api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+    namespace: "{{ proj_nm_demo }}"
+    name: sso-postgresql
+    api_version: apps.openshift.io/v1
+    kind: DeploymentConfig
+    definition:
+      metadata:
+        labels:
+          app.openshift.io/runtime: postgresql
+          app.openshift.io/runtime-version: '9.6'
+
+- name: "Set RH-SSO URL"
+  set_fact:
+    rh_sso_url: "https://secure-sso-{{ proj_nm_demo }}.{{ cluster_wildcard_domain.resources[0].status.domain }}"
+
+- name: "Get RH-SSO admin token"
+  uri:
+    url: "{{ rh_sso_url }}/auth/realms/master/protocol/openid-connect/token"
+    method: POST
+    body_format: form-urlencoded
+    status_code: 200,201,204
+    validate_certs: no
+    body:
+      username: "{{ rh_sso.admin.username }}"
+      password: "{{ rh_sso.admin.password }}"
+      grant_type: password
+      client_id: admin-cli
+  register: sso_admin_token
+  until: sso_admin_token.status in [200,201,204]
+  retries: 50
+  delay: 10
+
+- name: "Import RH-SSO realm"
+  uri:
+    url: "{{ rh_sso_url }}/auth/admin/realms"
+    method: POST
+    body_format: json
+    validate_certs: no
+    headers:
+      Content-Type: application/json
+      Authorization: "Bearer {{ sso_admin_token.json.access_token }}"
+    body: "{{ lookup('template', '../objects/spring-music-cdc-realm.json') }}"
+    status_code: 200,201,204,409

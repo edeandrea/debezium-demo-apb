@@ -1,5 +1,5 @@
-- name: "Deploy downloaded file /tmp/{{ filename }}"
+- name: "Deploy downloaded file {{ temp_dir }}/{{ filename }}"
   k8s:
-    src: "/tmp/{{ filename }}"
+    src: "{{ temp_dir }}/{{ filename }}"
     namespace: "{{ proj_nm }}"
     api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"

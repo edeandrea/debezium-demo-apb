@@ -11,6 +11,7 @@
     proj_nm_demo: demo
     ocp_proj_user: user1
     ocp_proj_user_pwd: openshift
+    temp_dir: /tmp/dbz-demo
   roles:
     - role: Operators
       tags:

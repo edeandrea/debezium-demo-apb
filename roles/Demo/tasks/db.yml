@@ -1,0 +1,17 @@
+- name: "Check if {{ proj_nm_demo }} DB resources already exist"
+  k8s_info:
+    api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+    kind: DeploymentConfig
+    api_version: apps.openshift.io/v1
+    namespace: "{{ proj_nm_demo }}"
+    name: summit-lab-spring-music-db
+  register: demo_app_db_dc
+
+- name: "Create {{ proj_nm_demo }} DB resources if needed"
+  include: ../../common/processTemplate.yml
+  vars:
+    base_url: "{{ templates_base_url }}"
+    template_filename: "{{ template_nm_db }}"
+    template_processed_filename: "{{ template_nm_processed_db }}"
+    proj_nm: "{{ proj_nm_demo }}"
+  when: demo_app_db_dc.resources|length == 0

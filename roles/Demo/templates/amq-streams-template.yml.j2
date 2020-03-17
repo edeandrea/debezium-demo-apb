@@ -1,0 +1,368 @@
+kind: Template
+apiVersion: v1
+metadata:
+  name: spring-music-cdc
+  annotations:
+    description: Template including AMQ Streams and Kafka Connect
+parameters:
+  - name: KAFKA_REPLICA_COUNT
+    description: The number of replicas for Kafka/Kafka Connect/Zookeeper
+    value: "3"
+  - name: RH_SSO_REALM
+    description: The realm within RH-SSO for authentication
+    value: spring-music-cdc
+    required: true
+  - name: RH_SSO_SERVER_ADDRESS
+    description: The address of the RH-SSO instance
+    value: "https://secure-sso.{{ proj_nm_demo }}.svc.cluster.local:8443"
+    required: true
+objects:
+  - kind: Secret
+    apiVersion: v1
+    type: Opaque
+    metadata:
+      name: broker-oauth-secret
+      labels:
+        app: spring-music-cdc
+        template: spring-music-cdc
+    data:
+      secret: "{{ rh_sso.kafka_broker_secret | b64encode }}"
+  - kind: Secret
+    apiVersion: v1
+    type: Opaque
+    metadata:
+      name: connect-oauth-secret
+      labels:
+        app: spring-music-cdc
+        template: spring-music-cdc
+    data:
+      secret: "{{ rh_sso.kafka_connect_secret | b64encode }}"
+  - kind: Secret
+    apiVersion: v1
+    type: Opaque
+    metadata:
+      name: bridge-oauth-secret
+      labels:
+        app: spring-music-cdc
+        template: spring-music-cdc
+    data:
+      secret: "{{ rh_sso.kafka_bridge_secret | b64encode }}"
+  - kind: Kafka
+    apiVersion: kafka.strimzi.io/v1beta1
+    metadata:
+      name: db-events
+      labels:
+        app.kubernetes.io/part-of: spring-music-cdc
+        app: spring-music-cdc
+        template: spring-music-cdc
+    spec:
+      kafka:
+        replicas: {{ '${{' }}KAFKA_REPLICA_COUNT}}
+        listeners:
+          plain: {}
+          tls: 
+            authentication:
+              type: oauth
+              clientId: kafka-broker
+              clientSecret:
+                secretName: broker-oauth-secret
+                key: secret
+              validIssuerUri: ${RH_SSO_SERVER_ADDRESS}/auth/realms/${RH_SSO_REALM}
+              # introspectionEndpointUri: ${RH_SSO_SERVER_ADDRESS}/auth/realms/${RH_SSO_REALM}/protocol/openid-connect/token/introspect
+              jwksEndpointUri: ${RH_SSO_SERVER_ADDRESS}/auth/realms/${RH_SSO_REALM}/protocol/openid-connect/certs
+              userNameClaim: preferred_username
+              tlsTrustedCertificates:
+                - secretName: {{ ca_truststore_secret_name }}
+                  certificate: xpaas.crt
+        jvmOptions:
+          gcLoggingEnabled: false
+        config:
+          auto.create.topics.enable: "true"
+          num.partitions: 1
+          offsets.topic.replication.factor: {{ '${{' }}KAFKA_REPLICA_COUNT}}
+          default.replication.factor: {{ '${{' }}KAFKA_REPLICA_COUNT}}
+          transaction.state.log.replication.factor: {{ '${{' }}KAFKA_REPLICA_COUNT}}
+          transaction.state.log.min.isr: 2
+        storage:
+          type: persistent-claim
+          size: 100Gi
+          deleteClaim: true
+        template:
+          statefulset:
+            metadata:
+              annotations:
+                app.openshift.io/connects-to: db-events-zookeeper,sso
+        metrics:
+          # Inspired by config from Kafka 2.0.0 example rules:
+          # https://github.com/prometheus/jmx_exporter/blob/master/example_configs/kafka-2_0_0.yml
+          lowercaseOutputName: true
+          rules:
+            # Special cases and very specific rules
+            - pattern : kafka.server<type=(.+), name=(.+), clientId=(.+), topic=(.+), partition=(.*)><>Value
+              name: kafka_server_$1_$2
+              type: GAUGE
+              labels:
+                clientId: "$3"
+                topic: "$4"
+                partition: "$5"
+            - pattern : kafka.server<type=(.+), name=(.+), clientId=(.+), brokerHost=(.+), brokerPort=(.+)><>Value
+              name: kafka_server_$1_$2
+              type: GAUGE
+              labels:
+                clientId: "$3"
+                broker: "$4:$5"
+            # Some percent metrics use MeanRate attribute
+            # Ex) kafka.server<type=(KafkaRequestHandlerPool), name=(RequestHandlerAvgIdlePercent)><>MeanRate
+            - pattern: kafka.(\w+)<type=(.+), name=(.+)Percent\w*><>MeanRate
+              name: kafka_$1_$2_$3_percent
+              type: GAUGE
+            # Generic gauges for percents
+            - pattern: kafka.(\w+)<type=(.+), name=(.+)Percent\w*><>Value
+              name: kafka_$1_$2_$3_percent
+              type: GAUGE
+            - pattern: kafka.(\w+)<type=(.+), name=(.+)Percent\w*, (.+)=(.+)><>Value
+              name: kafka_$1_$2_$3_percent
+              type: GAUGE
+              labels:
+                "$4": "$5"
+            # Generic per-second counters with 0-2 key/value pairs
+            - pattern: kafka.(\w+)<type=(.+), name=(.+)PerSec\w*, (.+)=(.+), (.+)=(.+)><>Count
+              name: kafka_$1_$2_$3_total
+              type: COUNTER
+              labels:
+                "$4": "$5"
+                "$6": "$7"
+            - pattern: kafka.(\w+)<type=(.+), name=(.+)PerSec\w*, (.+)=(.+)><>Count
+              name: kafka_$1_$2_$3_total
+              type: COUNTER
+              labels:
+                "$4": "$5"
+            - pattern: kafka.(\w+)<type=(.+), name=(.+)PerSec\w*><>Count
+              name: kafka_$1_$2_$3_total
+              type: COUNTER
+            # Generic gauges with 0-2 key/value pairs
+            - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.+), (.+)=(.+)><>Value
+              name: kafka_$1_$2_$3
+              type: GAUGE
+              labels:
+                "$4": "$5"
+                "$6": "$7"
+            - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.+)><>Value
+              name: kafka_$1_$2_$3
+              type: GAUGE
+              labels:
+                "$4": "$5"
+            - pattern: kafka.(\w+)<type=(.+), name=(.+)><>Value
+              name: kafka_$1_$2_$3
+              type: GAUGE
+            # Emulate Prometheus 'Summary' metrics for the exported 'Histogram's.
+            # Note that these are missing the '_sum' metric!
+            - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.+), (.+)=(.+)><>Count
+              name: kafka_$1_$2_$3_count
+              type: COUNTER
+              labels:
+                "$4": "$5"
+                "$6": "$7"
+            - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.*), (.+)=(.+)><>(\d+)thPercentile
+              name: kafka_$1_$2_$3
+              type: GAUGE
+              labels:
+                "$4": "$5"
+                "$6": "$7"
+                quantile: "0.$8"
+            - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.+)><>Count
+              name: kafka_$1_$2_$3_count
+              type: COUNTER
+              labels:
+                "$4": "$5"
+            - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.*)><>(\d+)thPercentile
+              name: kafka_$1_$2_$3
+              type: GAUGE
+              labels:
+                "$4": "$5"
+                quantile: "0.$6"
+            - pattern: kafka.(\w+)<type=(.+), name=(.+)><>Count
+              name: kafka_$1_$2_$3_count
+              type: COUNTER
+            - pattern: kafka.(\w+)<type=(.+), name=(.+)><>(\d+)thPercentile
+              name: kafka_$1_$2_$3
+              type: GAUGE
+              labels:
+                quantile: "0.$4"
+      zookeeper:
+        replicas: {{ '${{' }}KAFKA_REPLICA_COUNT}}
+        storage:
+          type: persistent-claim
+          size: 100Gi
+          deleteClaim: true
+        metrics:
+          # Inspired by Zookeeper rules
+          # https://github.com/prometheus/jmx_exporter/blob/master/example_configs/zookeeper.yaml
+          lowercaseOutputName: true
+          rules:
+            # replicated Zookeeper
+            - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+)><>(\\w+)"
+              name: "zookeeper_$2"
+            - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+)><>(\\w+)"
+              name: "zookeeper_$3"
+              labels:
+                replicaId: "$2"
+            - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+), name2=(\\w+)><>(\\w+)"
+              name: "zookeeper_$4"
+              labels:
+                replicaId: "$2"
+                memberType: "$3"
+            - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+), name2=(\\w+), name3=(\\w+)><>(\\w+)"
+              name: "zookeeper_$4_$5"
+              labels:
+                replicaId: "$2"
+                memberType: "$3"
+            # standalone Zookeeper
+            - pattern: "org.apache.ZooKeeperService<name0=StandaloneServer_port(\\d+)><>(\\w+)"
+              name: "zookeeper_$2"
+            - pattern: "org.apache.ZooKeeperService<name0=StandaloneServer_port(\\d+), name1=(InMemoryDataTree)><>(\\w+)"
+              name: "zookeeper_$2_$3"
+      entityOperator:
+        topicOperator: {}
+        userOperator: {}
+      kafkaExporter:
+        topicRegex: ".*"
+        groupRegex: ".*"
+  - kind: KafkaConnect
+    apiVersion: kafka.strimzi.io/v1beta1
+    metadata:
+      name: db-events
+      labels:
+        app: spring-music-cdc
+        app.kubernetes.io/part-of: spring-music-cdc
+        template: spring-music-cdc
+      annotations:
+        app.openshift.io/connects-to: db-events-kafka,summit-lab-spring-music-db,sso
+        strimzi.io/use-connector-resources: "true"
+    spec:
+      replicas: {{ '${{' }}KAFKA_REPLICA_COUNT}}
+      image: "quay.io/edeandrea/kafka-connect-debezium-mysql:latest"
+      bootstrapServers: "db-events-kafka-bootstrap:9093"
+      jvmOptions:
+        gcLoggingEnabled: false
+      config:
+        group.id: spring-music-db
+        offset.storage.topic: spring-music-db-offsets
+        config.storage.topic: spring-music-db-configs
+        status.storage.topic: spring-music-db-status
+        config.storage.replication.factor: {{ '${{' }}KAFKA_REPLICA_COUNT}}
+        offset.storage.replication.factor: {{ '${{' }}KAFKA_REPLICA_COUNT}}
+        status.storage.replication.factor: {{ '${{' }}KAFKA_REPLICA_COUNT}}
+        config.providers: file
+        config.providers.file.class: org.apache.kafka.common.config.provider.FileConfigProvider
+      authentication:
+        type: oauth
+        tokenEndpointUri: ${RH_SSO_SERVER_ADDRESS}/auth/realms/${RH_SSO_REALM}/protocol/openid-connect/token
+        clientId: kafka-connect
+        clientSecret:
+          secretName: connect-oauth-secret
+          key: secret
+        tlsTrustedCertificates:
+          - secretName: {{ ca_truststore_secret_name }}
+            certificate: xpaas.crt
+      tls:
+        trustedCertificates:
+          - certificate: ca.crt
+            secretName: db-events-cluster-ca-cert
+      externalConfiguration:
+        volumes:
+          - name: connector-config
+            secret:
+              secretName: summit-lab-spring-music-db-connector-creds
+      template:
+        deployment:
+          metadata:
+            annotations:
+              app.openshift.io/connects-to: db-events-kafka,summit-lab-spring-music-db,sso
+  - kind: KafkaBridge
+    apiVersion: kafka.strimzi.io/v1alpha1
+    metadata:
+      name: db-events
+      labels:
+        app: spring-music-cdc
+        app.kubernetes.io/part-of: spring-music-cdc
+        template: spring-music-cdc
+      annotations:
+        app.openshift.io/connects-to: db-events-kafka,sso
+    spec:
+      replicas: 1
+      bootstrapServers: db-events-kafka-bootstrap:9093
+      http:
+        port: 8080
+      jvmOptions:
+        gcLoggingEnabled: false
+      authentication:
+        type: oauth
+        tokenEndpointUri: ${RH_SSO_SERVER_ADDRESS}/auth/realms/${RH_SSO_REALM}/protocol/openid-connect/token
+        clientId: kafka-bridge
+        clientSecret:
+          secretName: bridge-oauth-secret
+          key: secret
+        tlsTrustedCertificates:
+          - secretName: {{ ca_truststore_secret_name }}
+            certificate: xpaas.crt
+      tls:
+        trustedCertificates:
+          - certificate: ca.crt
+            secretName: db-events-cluster-ca-cert
+      template:
+        deployment:
+          metadata:
+            labels:
+              discovery.3scale.net: true
+            annotations:
+              app.openshift.io/connects-to: db-events-kafka,sso
+              discovery.3scale.net/scheme: http
+              discovery.3scale.net/port: 8080
+              discovery.3scale.net/path: /
+              discovery.3scale.net/description-path: /openapi
+  - kind: Route
+    apiVersion: v1
+    metadata:
+      labels:
+        app: spring-music-cdc
+        template: spring-music-cdc
+      name: db-events-connect-api
+    spec:
+      port:
+        targetPort: rest-api
+      to:
+        kind: Service
+        name: db-events-connect-api
+        weight: 100
+  - kind: Route
+    apiVersion: v1
+    metadata:
+      labels:
+        app: spring-music-cdc
+        template: spring-music-cdc
+      name: db-events-bridge-api
+    spec:
+      port:
+        targetPort: rest-api
+      to:
+        kind: Service
+        name: db-events-bridge-service 
+        weight: 100
+  # - kind: KafkaConnector
+  #apiVersion: kafka.strimzi.io/v1alpha1
+  #metadata:
+  #  name: db-connector
+  #  labels:
+  #    app: spring-music-cdc
+  #    strimzi.io/cluster: db-connect
+  #spec:
+  #  class: io.debezium.connector.mysql.MySqlConnector
+  #  config:
+  #    topic: summit-lab-spring-music-db
+  #    database.hostname: summit-lab-spring-music-db
+  #    database.port: 3306
+  #    database.user: "${file:/opt/kafka/external-configuration/connector-config/connector.properties:dbUsername}"
+  #    database.password: "${file:/opt/kafka/external-configuration/connector-config/connector.properties:dbPassword}"
+  #    database.dbname: music
+  #    database.server.name: spring-music

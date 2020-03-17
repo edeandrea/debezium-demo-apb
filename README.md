@@ -4,6 +4,8 @@ The [application](https://github.com/edeandrea/summit-lab-spring-music/tree/pipe
 
 The database credentials are stored in a `Secret` and then [mounted into the Kafka Connect cluster](https://strimzi.io/docs/latest/#proc-kafka-connect-mounting-volumes-deployment-configuration-kafka-connect).
 
+The Kafka Broker, [Kafka Connect](https://access.redhat.com/documentation/en-us/red_hat_amq/7.5/html-single/using_amq_streams_on_openshift/index#kafka-connect-str), and [Kafka Bridge](https://access.redhat.com/documentation/en-us/red_hat_amq/7.5/html-single/using_amq_streams_on_openshift/index#kafka-bridge-concepts-str) are all [authenticated via OAuth 2.0](https://access.redhat.com/documentation/en-us/red_hat_amq/7.5/html-single/using_amq_streams_on_openshift/index#assembly-oauth-str). [Red Hat Single Sign-on](https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.3) is installed and used as the authorization server. A new realm is automatically created and provisioned.
+
 ## Deployed Resource URLs
 All the below resource URLs are suffixed with the apps url of the cluster (i.e. for an RHPDS environment, `apps.cluster-##GUID##.##GUID##.example.opentlc.com`).
 
@@ -13,6 +15,8 @@ All the below resource URLs are suffixed with the apps url of the cluster (i.e. 
     - http://kafdrop-demo.##CLUSTER_SUFFIX##
 - [Demo App](https://github.com/edeandrea/summit-lab-spring-music/tree/pipeline)
     - http://spring-music-demo.##CLUSTER_SUFFIX##
+- Red Hat Single Sign-on
+    - https://secure-sso-demo.##CLUSTER_SUFFIX##
 - Prometheus
     - http://prometheus-demo.##CLUSTER_SUFFIX##
 - Grafana
@@ -42,6 +46,7 @@ This playbook also makes some assumptions about some things within the cluster. 
 
 ## Additional Resources
 - [MySQL Database Template](https://github.com/edeandrea/summit-lab-spring-music/blob/pipeline/misc/templates/prod-template-ocp4.yml)
-- [AMQ Streams Template](https://github.com/edeandrea/summit-lab-spring-music/blob/pipeline/misc/templates/amq-streams-template.yml)
-- [Kafdrop Template](https://github.com/edeandrea/summit-lab-spring-music/blob/pipeline/misc/templates/kafdrop.yml)
-- [Debezium Connector Config](https://github.com/edeandrea/summit-lab-spring-music/blob/pipeline/misc/templates/debezium-connector-config.json)
+- [AMQ Streams Template](roles/Demo/templates/amq-streams-template.yml.j2)
+- [Kafdrop Template](roles/Demo/objects/kafdrop.yml)
+- [Debezium Connector Config](roles/Demo/objects/debezium-connector-config.json)
+- [Red Hat SSO Realm Config](roles/Demo/objects/spring-music-cdc-realm.json)

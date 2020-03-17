@@ -31,24 +31,44 @@
         dest: "{{ grafana_operator_local_dir }}"
 
     - name: Install Grafana Operator CRDs
-      include: ../../common/runOcShell.yml
-      vars:
-        oc_command: "oc create -f {{ grafana_operator_local_dir }}/deploy/crds -n {{ proj_nm_demo }}"
+      block:
+        - include: ../../common/runOcShell.yml
+          vars:
+            oc_command: "oc create -f {{ grafana_operator_local_dir }}/deploy/crds -n {{ proj_nm_demo }}"
+      rescue:
+        - include: ../../common/runOcShell.yml
+          vars:
+            oc_command: "oc replace -f {{ grafana_operator_local_dir }}/deploy/crds -n {{ proj_nm_demo }}"
 
     - name: Install Grafana Operator Roles
-      include: ../../common/runOcShell.yml
-      vars:
-        oc_command: "oc create -f {{ grafana_operator_local_dir }}/deploy/roles -n {{ proj_nm_demo }}"
+      block:
+        - include: ../../common/runOcShell.yml
+          vars:
+            oc_command: "oc create -f {{ grafana_operator_local_dir }}/deploy/roles -n {{ proj_nm_demo }}"
+      rescue:
+        - include: ../../common/runOcShell.yml
+          vars:
+            oc_command: "oc replace -f {{ grafana_operator_local_dir }}/deploy/roles -n {{ proj_nm_demo }}"
 
     - name: Install Grafana Cluster Roles
-      include: ../../common/runOcShell.yml
-      vars:
-        oc_command: "oc create -f {{ grafana_operator_local_dir }}/deploy/cluster_roles"
+      block:
+        - include: ../../common/runOcShell.yml
+          vars:
+            oc_command: "oc create -f {{ grafana_operator_local_dir }}/deploy/cluster_roles"
+      rescue:
+        - include: ../../common/runOcShell.yml
+          vars:
+            oc_command: "oc replace -f {{ grafana_operator_local_dir }}/deploy/cluster_roles"
 
     - name: Install Grafana Operator
-      include: ../../common/runOcShell.yml
-      vars:
-        oc_command: "oc create -f {{ grafana_operator_local_dir }}/deploy/operator.yaml -n {{ proj_nm_demo }}"
+      block:
+        - include: ../../common/runOcShell.yml
+          vars:
+            oc_command: "oc create -f {{ grafana_operator_local_dir }}/deploy/operator.yaml -n {{ proj_nm_demo }}"
+      rescue:
+        - include: ../../common/runOcShell.yml
+          vars:
+            oc_command: "oc replace -f {{ grafana_operator_local_dir }}/deploy/operator.yaml -n {{ proj_nm_demo }}"
 
     - name: Wait for AMQ Streams operator to start
       k8s_info:

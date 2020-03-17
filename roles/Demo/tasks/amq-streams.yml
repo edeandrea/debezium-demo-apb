@@ -1,0 +1,61 @@
+- name: Check if AMQ Streams already provisioned
+  k8s_info:
+    api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+    kind: Deployment
+    api_version: apps/v1
+    namespace: "{{ proj_nm_demo }}"
+    name: db-events-connect
+  register: amq_streams_deployment
+
+- name: Process AMQ Streams template
+  template:
+    src: amq-streams-template.yml.j2
+    dest: "{{ temp_dir }}/amq-streams-template.yml"
+  when: amq_streams_deployment.resources|length == 0
+
+- name: Deploy AMQ Streams
+  include: ../../common/runOcShell.yml
+  vars:
+    oc_command: "oc process -n {{ proj_nm_demo }} -f {{ temp_dir }}/amq-streams-template.yml | oc create -f -"
+  when: amq_streams_deployment.resources|length == 0
+
+- name: Check if Kafdrop already provisioned
+  k8s_info:
+    api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+    kind: DeploymentConfig
+    api_version: apps.openshift.io/v1
+    namespace: "{{ proj_nm_demo }}"
+    name: db-events-kafdrop
+  register: kafdrop_dc
+
+- name: Deploy Kafdrop if needed
+  k8s:
+    api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+    namespace: "{{ proj_nm_demo }}"
+    definition: "{{ lookup('template', '../objects/kafdrop.yml') }}"
+  when: kafdrop_dc.resources|length == 0
+
+- name: Set Kafka Connect URL
+  set_fact:
+    kafka_connect_url: "http://db-events-connect-api-{{ proj_nm_demo }}.{{ cluster_wildcard_domain.resources[0].status.domain }}"
+
+- name: Wait for Kafka Connect to become available
+  uri:
+    url: "{{ kafka_connect_url }}/connectors"
+  register: kafka_connect_status
+  until: kafka_connect_status.status == 200
+  retries: 50
+  delay: 10
+
+- name: Install Debezium Connector
+  uri:
+    url: "{{ kafka_connect_url }}/connectors"
+    method: POST
+    src: ../objects/debezium-connector-config.json
+    status_code: 201
+    body_format: json
+  register: debezium_connector_deployment
+  when: kafka_connect_status.json|length == 0
+  until: debezium_connector_deployment.status == 201
+  retries: 50
+  delay: 10
