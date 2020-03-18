@@ -35,8 +35,8 @@
     definition:
       metadata:
         labels:
-          app.openshift.io/runtime: java
-          app.openshift.io/runtime-version: '8'
+          app.openshift.io/runtime: sso
+          app.openshift.io/runtime-version: '7.3'
         annotations:
           app.openshift.io/connects-to: sso-postgresql
 
