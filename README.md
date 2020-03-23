@@ -57,3 +57,6 @@ This playbook also makes some assumptions about some things within the cluster. 
 PRs welcome!
 - Enabling schema registry and using AVRO serializtion/deserialization
 - Adding metrics to `KafkaConnect` and adding a dashboard to Grafana
+- Adding authorization on the topics to the different clients
+- Getting Kafdrop to authenticate with the broker
+    - This will allow removal of the `plain` listener on the broker
