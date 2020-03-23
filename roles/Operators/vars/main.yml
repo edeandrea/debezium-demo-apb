@@ -1,5 +1,0 @@
-proj_nm_rh_operators: openshift-operators
-grafana_operator_git_repo: https://github.com/integr8ly/grafana-operator.git
-grafana_operator_git_tag: v3.1.0
-grafana_operator_checkout_dir: "{{ temp_dir }}"
-grafana_operator_local_dir: "{{ grafana_operator_checkout_dir }}/grafana-operator"

@@ -22,6 +22,7 @@ objects:
     type: Opaque
     metadata:
       name: broker-oauth-secret
+      namespace: "{{ proj_nm_demo }}"
       labels:
         app: spring-music-cdc
         template: spring-music-cdc
@@ -32,6 +33,7 @@ objects:
     type: Opaque
     metadata:
       name: connect-oauth-secret
+      namespace: "{{ proj_nm_demo }}"
       labels:
         app: spring-music-cdc
         template: spring-music-cdc
@@ -42,6 +44,7 @@ objects:
     type: Opaque
     metadata:
       name: bridge-oauth-secret
+      namespace: "{{ proj_nm_demo }}"
       labels:
         app: spring-music-cdc
         template: spring-music-cdc
@@ -51,8 +54,8 @@ objects:
     apiVersion: kafka.strimzi.io/v1beta1
     metadata:
       name: db-events
+      namespace: "{{ proj_nm_demo }}"
       labels:
-        app.kubernetes.io/part-of: spring-music-cdc
         app: spring-music-cdc
         template: spring-music-cdc
     spec:
@@ -90,6 +93,10 @@ objects:
         template:
           statefulset:
             metadata:
+              labels:
+                app.kubernetes.io/part-of: spring-music-cdc
+                app: spring-music-cdc
+                template: spring-music-cdc
               annotations:
                 app.openshift.io/connects-to: db-events-zookeeper,sso
         metrics:
@@ -195,6 +202,13 @@ objects:
           type: persistent-claim
           size: 100Gi
           deleteClaim: true
+        template:
+          statefulset:
+            metadata:
+              labels:
+                app.kubernetes.io/part-of: spring-music-cdc
+                app: spring-music-cdc
+                template: spring-music-cdc
         metrics:
           # Inspired by Zookeeper rules
           # https://github.com/prometheus/jmx_exporter/blob/master/example_configs/zookeeper.yaml
@@ -232,12 +246,11 @@ objects:
     apiVersion: kafka.strimzi.io/v1beta1
     metadata:
       name: db-events
+      namespace: "{{ proj_nm_demo }}"
       labels:
         app: spring-music-cdc
-        app.kubernetes.io/part-of: spring-music-cdc
         template: spring-music-cdc
       annotations:
-        app.openshift.io/connects-to: db-events-kafka,summit-lab-spring-music-db,sso
         strimzi.io/use-connector-resources: "true"
     spec:
       replicas: {{ '${{' }}KAFKA_REPLICA_COUNT}}
@@ -277,18 +290,20 @@ objects:
       template:
         deployment:
           metadata:
+            labels:
+              app: spring-music-cdc
+              app.kubernetes.io/part-of: spring-music-cdc
+              template: spring-music-cdc
             annotations:
               app.openshift.io/connects-to: db-events-kafka,summit-lab-spring-music-db,sso
   - kind: KafkaBridge
     apiVersion: kafka.strimzi.io/v1alpha1
     metadata:
       name: db-events
+      namespace: "{{ proj_nm_demo }}"
       labels:
         app: spring-music-cdc
-        app.kubernetes.io/part-of: spring-music-cdc
         template: spring-music-cdc
-      annotations:
-        app.openshift.io/connects-to: db-events-kafka,sso
     spec:
       replicas: 1
       bootstrapServers: db-events-kafka-bootstrap:9093
@@ -315,33 +330,72 @@ objects:
           metadata:
             labels:
               discovery.3scale.net: true
+              app: spring-music-cdc
+              app.kubernetes.io/part-of: spring-music-cdc
+              template: spring-music-cdc
             annotations:
               app.openshift.io/connects-to: db-events-kafka,sso
               discovery.3scale.net/scheme: http
               discovery.3scale.net/port: 8080
               discovery.3scale.net/path: /
               discovery.3scale.net/description-path: /openapi
-  - kind: Route
-    apiVersion: v1
+  - kind: KafkaConnector
+    apiVersion: kafka.strimzi.io/v1alpha1
     metadata:
+      name: db-events
+      namespace: "{{ proj_nm_demo }}"
       labels:
         app: spring-music-cdc
-        template: spring-music-cdc
-      name: db-events-connect-api
+        strimzi.io/cluster: db-events
     spec:
-      port:
-        targetPort: rest-api
-      to:
-        kind: Service
-        name: db-events-connect-api
-        weight: 100
+      class: io.debezium.connector.mysql.MySqlConnector
+      tasksMax: 1
+      config:
+        database.hostname: summit-lab-spring-music-db
+        database.port: 3306
+        database.user: "${file:/opt/kafka/external-configuration/connector-config/connector.properties:dbUsername}"
+        database.password: "${file:/opt/kafka/external-configuration/connector-config/connector.properties:dbPassword}"
+        database.dbname: music
+        database.server.name: spring-music
+        database.server.id: 223344
+        database.whitelist: music
+        database.allowPublicKeyRetrieval: true
+        database.history.kafka.bootstrap.servers: db-events-kafka-bootstrap:9092
+        database.history.kafka.topic: dbhistory.music
+        table.whitelist: music.outbox_events
+        tombstones.on.delete : false
+        transforms: outbox
+        transforms.outbox.type: io.debezium.transforms.outbox.EventRouter
+        transforms.outbox.route.topic.replacement: "outbox.${routedByValue}.events"
+        transforms.outbox.table.field.event.id: event_id
+        transforms.outbox.table.field.event.key: aggregate_id
+        transforms.outbox.table.field.event.timestamp: event_timestamp
+        transforms.outbox.table.field.event.type: event_type
+        transforms.outbox.table.field.event.payload.id: aggregate_id
+        transforms.outbox.route.by.field: aggregate_type
+        transforms.outbox.table.fields.additional.placement: "event_id:envelope:eventId,event_timestamp:envelope:eventTimestamp,aggregate_id:envelope:aggregateId,aggregate_type:envelope:aggregateType"
+#  - kind: Route
+#    apiVersion: route.openshift.io/v1
+#    metadata:
+#      labels:
+#        app: spring-music-cdc
+#        template: spring-music-cdc
+#      name: db-events-connect-api
+#    spec:
+#      port:
+#        targetPort: rest-api
+#      to:
+#        kind: Service
+#        name: db-events-connect-api
+#        weight: 100
   - kind: Route
-    apiVersion: v1
+    apiVersion: route.openshift.io/v1
     metadata:
       labels:
         app: spring-music-cdc
         template: spring-music-cdc
       name: db-events-bridge-api
+      namespace: "{{ proj_nm_demo }}"
     spec:
       port:
         targetPort: rest-api
@@ -349,20 +403,3 @@ objects:
         kind: Service
         name: db-events-bridge-service 
         weight: 100
-  # - kind: KafkaConnector
-  #apiVersion: kafka.strimzi.io/v1alpha1
-  #metadata:
-  #  name: db-connector
-  #  labels:
-  #    app: spring-music-cdc
-  #    strimzi.io/cluster: db-connect
-  #spec:
-  #  class: io.debezium.connector.mysql.MySqlConnector
-  #  config:
-  #    topic: summit-lab-spring-music-db
-  #    database.hostname: summit-lab-spring-music-db
-  #    database.port: 3306
-  #    database.user: "${file:/opt/kafka/external-configuration/connector-config/connector.properties:dbUsername}"
-  #    database.password: "${file:/opt/kafka/external-configuration/connector-config/connector.properties:dbPassword}"
-  #    database.dbname: music
-  #    database.server.name: spring-music

@@ -1,15 +1,30 @@
-- name: Check if application is already deployed
-  k8s_info:
-    api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
-    api_version: apps.openshift.io/v1
-    kind: DeploymentConfig
-    namespace: "{{ proj_nm_demo }}"
-    name: spring-music
-  register: spring_music_dc
+- name: Deploy app
+  block:
+    - name: "Log into OpenShift as project user"
+      k8s_auth:
+        username: "{{ ocp_proj_user }}"
+        password: "{{ ocp_proj_user_pwd }}"
+      register: k8s_auth_results
 
-- name: Deploy application if needed
-  k8s:
-    api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
-    namespace: "{{ proj_nm_demo }}"
-    definition: "{{ lookup('template', '../objects/app.yml') }}"
-  when: spring_music_dc.resources|length == 0
+    - name: Check if application is already deployed
+      k8s_info:
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+        api_version: apps.openshift.io/v1
+        kind: DeploymentConfig
+        namespace: "{{ proj_nm_demo }}"
+        name: spring-music
+      register: spring_music_dc
+
+    - name: Deploy application if needed
+      k8s:
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+        namespace: "{{ proj_nm_demo }}"
+        definition: "{{ lookup('template', '../objects/app.yml') }}"
+      when: spring_music_dc.resources|length == 0
+
+  always:
+    - name: If OpenShift login succeeded try to log out
+      when: k8s_auth_results.k8s_auth.api_key is defined
+      k8s_auth:
+        state: absent
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"

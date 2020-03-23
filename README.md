@@ -47,8 +47,13 @@ This playbook also makes some assumptions about some things within the cluster. 
 ## Additional Resources
 - [MySQL Database Template](https://github.com/edeandrea/summit-lab-spring-music/blob/pipeline/misc/templates/prod-template-ocp4.yml)
 - [AMQ Streams Template](roles/Demo/templates/amq-streams-template.yml.j2)
+    - Includes `Kafka`, `KafkaConnect`, `KafkaConnector`, and `KafkaBridge` custom resources
 - [Kafdrop Template](roles/Demo/objects/kafdrop.yml)
-- [Debezium Connector Config](roles/Demo/objects/debezium-connector-config.json)
 - [Red Hat SSO Realm Config](roles/Demo/objects/spring-music-cdc-realm.json)
 - [Guide used](https://github.com/sigreen/amq-streams-oauth-ldap) for help in setting this all up
     - Thanks @sigreen!
+
+## Backlog for enhancements
+PRs welcome!
+- Enabling schema registry and using AVRO serializtion/deserialization
+- Adding metrics to `KafkaConnect` and adding a dashboard to Grafana

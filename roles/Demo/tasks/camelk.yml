@@ -1,0 +1,45 @@
+- name: Provision Camel-K
+  block:
+    - name: "Log into OpenShift as admin"
+      k8s_auth:
+        username: "{{ ocp_admin }}"
+        password: "{{ ocp_admin_pwd }}"
+      register: k8s_auth_results
+
+    - name: Install Camel-K Operator
+      k8s:
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+        namespace: "{{ proj_nm_rh_operators }}"
+        definition: "{{ lookup('template', '../objects/camelk-operator.yml') }}"
+
+    - name: Wait for CamelK operator to start
+      k8s_info:
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+        namespace: "{{ proj_nm_rh_operators }}"
+        api_version: v1
+        kind: Pod
+        label_selectors:
+          - name = camel-k-operator
+      register: camelk_operator_pod
+      until: camelk_operator_pod.resources is defined and camelk_operator_pod.resources|length == 1 and camelk_operator_pod.resources[0].status.containerStatuses is defined and camelk_operator_pod.resources[0].status.containerStatuses|length == 1 and camelk_operator_pod.resources[0].status.containerStatuses[0] is defined and camelk_operator_pod.resources[0].status.containerStatuses[0].ready == true
+      retries: 50
+      delay: 10
+
+    - name: Log out of OpenShift admin user
+      when: k8s_auth_results.k8s_auth.api_key is defined
+      k8s_auth:
+        state: absent
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+
+    - name: "Log into OpenShift as project user"
+      k8s_auth:
+        username: "{{ ocp_proj_user }}"
+        password: "{{ ocp_proj_user_pwd }}"
+      register: k8s_auth_results
+
+  always:
+    - name: If OpenShift login succeeded try to log out
+      when: k8s_auth_results.k8s_auth.api_key is defined
+      k8s_auth:
+        state: absent
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"

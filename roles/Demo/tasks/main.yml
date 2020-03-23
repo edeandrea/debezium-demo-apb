@@ -20,6 +20,12 @@
         state: absent
         api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
 
+    - name: Deploy Container Security
+      include_tasks: ./container-security.yml
+
+    - name: Deploy Serverless
+      include_tasks: ./serverless.yml
+
     - name: "Log into OpenShift as project user"
       k8s_auth:
         username: "{{ ocp_proj_user }}"
@@ -52,6 +58,15 @@
 
     - name: Deploy App
       include_tasks: ./app.yml
+
+    - name: If OpenShift login succeeded try to log out
+      when: k8s_auth_results.k8s_auth.api_key is defined
+      k8s_auth:
+        state: absent
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+
+    - name: Deploy Camel-K
+      include_tasks: ./camelk.yml
 
     - debug:
         msg: "Provisioning has completed. Please go to https://console-openshift-console.{{ cluster_wildcard_domain.resources[0].status.domain }}/k8s/cluster/projects/{{ proj_nm_demo }} to see the project. It may take a while for the application to finish building and deploying."

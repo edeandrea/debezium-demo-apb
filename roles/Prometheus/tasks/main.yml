@@ -1,5 +1,23 @@
 - name: Provision Prometheus
   block:
+    - name: "Log into OpenShift as admin"
+      k8s_auth:
+        username: "{{ ocp_admin }}"
+        password: "{{ ocp_admin_pwd }}"
+      register: k8s_auth_results
+
+    - name: Install Prometheus Operator
+      k8s:
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+        namespace: "{{ proj_nm_rh_operators }}"
+        definition: "{{ lookup('template', '../objects/prometheus-operator.yml') }}"
+
+    - name: Log out of OpenShift admin user
+      when: k8s_auth_results.k8s_auth.api_key is defined
+      k8s_auth:
+        state: absent
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+        
     - name: "Log into OpenShift as project user"
       k8s_auth:
         username: "{{ ocp_proj_user }}"

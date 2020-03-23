@@ -1,55 +1,70 @@
-- name: Check to see if secrets are already created
-  k8s_info:
-    api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
-    kind: Secret
-    api_version: v1
-    namespace: "{{ proj_nm_demo }}"
-    name: "{{ cert_secret_name }}"
-  register: cert_secret
-
-- name: Generate certs
-  when: cert_secret.resources|length == 0
+- name: Deploy certificates
   block:
-    - name: Create cert temp dir
-      file:
-        path: "{{ cert_dir }}"
-        state: directory
+    - name: "Log into OpenShift as project user"
+      k8s_auth:
+        username: "{{ ocp_proj_user }}"
+        password: "{{ ocp_proj_user_pwd }}"
+      register: k8s_auth_results
 
-    - name: Generate CA certificate
-      shell: "openssl req -new -newkey rsa:4096 -x509 -keyout {{ cert_dir }}/xpaas.key -out {{ cert_dir }}/xpaas.crt -days 365 -passout pass:password -subj \"/CN=secure-sso.{{ proj_nm_demo }}.svc\""
+    - name: Check to see if secrets are already created
+      k8s_info:
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+        kind: Secret
+        api_version: v1
+        namespace: "{{ proj_nm_demo }}"
+        name: "{{ cert_secret_name }}"
+      register: cert_secret
 
-    - name: Generate CA certificate for the HTTPS keystore
-      shell: "keytool -genkeypair -storepass password -keyalg RSA -keysize 2048 -dname \"CN=secure-sso.{{ proj_nm_demo }}.svc.cluster.local\" -alias jboss -keystore {{ cert_dir }}/keystore.jks -ext SAN=dns:secure-sso.{{ proj_nm_demo }}.svc,dns:secure-sso.{{ proj_nm_demo }}.svc.cluster.local"
+    - name: Generate certs
+      when: cert_secret.resources|length == 0
+      block:
+        - name: Create cert temp dir
+          file:
+            path: "{{ cert_dir }}"
+            state: directory
 
-    - name: Generate CSR for the HTTPS keystore
-      shell: "keytool -certreq -storepass password -keyalg rsa -alias jboss -keystore {{ cert_dir }}/keystore.jks -file {{ cert_dir }}/sso.csr"
+        - name: Generate CA certificate
+          shell: "openssl req -new -newkey rsa:4096 -x509 -keyout {{ cert_dir }}/xpaas.key -out {{ cert_dir }}/xpaas.crt -days 365 -passout pass:password -subj \"/CN=secure-sso.{{ proj_nm_demo }}.svc\""
 
-    - name: Sign the CSR
-      shell: "openssl x509 -passin pass:password -req -CA {{ cert_dir }}/xpaas.crt -CAkey {{ cert_dir }}/xpaas.key -in {{ cert_dir }}/sso.csr -out {{ cert_dir }}/sso.crt -days 365 -CAcreateserial"
+        - name: Generate CA certificate for the HTTPS keystore
+          shell: "keytool -genkeypair -storepass password -keyalg RSA -keysize 2048 -dname \"CN=secure-sso.{{ proj_nm_demo }}.svc.cluster.local\" -alias jboss -keystore {{ cert_dir }}/keystore.jks -ext SAN=dns:secure-sso.{{ proj_nm_demo }}.svc,dns:secure-sso.{{ proj_nm_demo }}.svc.cluster.local"
 
-    - name: Import the CA certificate into the HTTPS keystore
-      shell: "keytool -import -storepass password -trustcacerts -noprompt -file {{ cert_dir }}/xpaas.crt -alias xpaas.ca -keystore {{ cert_dir }}/keystore.jks"
+        - name: Generate CSR for the HTTPS keystore
+          shell: "keytool -certreq -storepass password -keyalg rsa -alias jboss -keystore {{ cert_dir }}/keystore.jks -file {{ cert_dir }}/sso.csr"
 
-    - name: Import the signed CSR into the HTTPS keystore
-      shell: "keytool -import -storepass password -file {{ cert_dir }}/sso.crt -alias jboss -keystore {{ cert_dir }}/keystore.jks"
+        - name: Sign the CSR
+          shell: "openssl x509 -passin pass:password -req -CA {{ cert_dir }}/xpaas.crt -CAkey {{ cert_dir }}/xpaas.key -in {{ cert_dir }}/sso.csr -out {{ cert_dir }}/sso.crt -days 365 -CAcreateserial"
 
-    - name: Generate a secure key for the JGroups keystore
-      shell: "keytool -genseckey -storepass password -keypass password -alias secret-key -storetype JCEKS -keystore {{ cert_dir }}/jgroups.jceks"
+        - name: Import the CA certificate into the HTTPS keystore
+          shell: "keytool -import -storepass password -trustcacerts -noprompt -file {{ cert_dir }}/xpaas.crt -alias xpaas.ca -keystore {{ cert_dir }}/keystore.jks"
 
-    - name: Import the CA cert into a new SSO truststore
-      shell: "keytool -import -storepass password -trustcacerts -noprompt -file {{ cert_dir }}/xpaas.crt -alias xpaas.ca -keystore {{ cert_dir }}/truststore.jks"
+        - name: Import the signed CSR into the HTTPS keystore
+          shell: "keytool -import -storepass password -file {{ cert_dir }}/sso.crt -alias jboss -keystore {{ cert_dir }}/keystore.jks"
 
-    - name: Create the secrets for the HTTPS and JGroups Keystores
-      include: ../../common/runOcShell.yml
-      vars:
-        oc_command: "oc create secret generic {{ cert_secret_name }} --from-file={{ cert_dir }}/keystore.jks --from-file={{ cert_dir }}/jgroups.jceks --from-file={{ cert_dir }}/truststore.jks -n {{ proj_nm_demo }}"
+        - name: Generate a secure key for the JGroups keystore
+          shell: "keytool -genseckey -storepass password -keypass password -alias secret-key -storetype JCEKS -keystore {{ cert_dir }}/jgroups.jceks"
 
-    - name: Link the secrets to the default service account
-      include: ../../common/runOcShell.yml
-      vars:
-        oc_command: "oc secrets -n {{ proj_nm_demo }} link default {{ cert_secret_name }}"
+        - name: Import the CA cert into a new SSO truststore
+          shell: "keytool -import -storepass password -trustcacerts -noprompt -file {{ cert_dir }}/xpaas.crt -alias xpaas.ca -keystore {{ cert_dir }}/truststore.jks"
 
-    - name: Create the TLS trusted cert secret
-      include: ../../common/runOcShell.yml
-      vars:
-        oc_command: "oc create secret generic {{ ca_truststore_secret_name }} --from-file={{ cert_dir }}/xpaas.crt -n {{ proj_nm_demo }}"
+        - name: Create the secrets for the HTTPS and JGroups Keystores
+          include: ../../common/runOcShell.yml
+          vars:
+            oc_command: "oc create secret generic {{ cert_secret_name }} --from-file={{ cert_dir }}/keystore.jks --from-file={{ cert_dir }}/jgroups.jceks --from-file={{ cert_dir }}/truststore.jks -n {{ proj_nm_demo }}"
+
+        - name: Link the secrets to the default service account
+          include: ../../common/runOcShell.yml
+          vars:
+            oc_command: "oc secrets -n {{ proj_nm_demo }} link default {{ cert_secret_name }}"
+
+        - name: Create the TLS trusted cert secret
+          include: ../../common/runOcShell.yml
+          vars:
+            oc_command: "oc create secret generic {{ ca_truststore_secret_name }} --from-file={{ cert_dir }}/xpaas.crt -n {{ proj_nm_demo }}"
+
+  always:
+    - name: If OpenShift login succeeded try to log out
+      when: k8s_auth_results.k8s_auth.api_key is defined
+      k8s_auth:
+        state: absent
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"

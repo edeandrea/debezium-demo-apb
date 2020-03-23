@@ -67,7 +67,7 @@ spec:
     deploymentconfig: db-events-kafdrop
 ---
 kind: Route
-apiVersion: v1
+apiVersion: route.openshift.io/v1
 metadata:
   labels:
     app: kafdrop

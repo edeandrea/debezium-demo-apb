@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+ name: "{{ knative_serving_nm }}"
+---
+apiVersion: operator.knative.dev/v1alpha1
+kind: KnativeServing
+metadata:
+ name: "{{ knative_serving_nm }}"
+ namespace: "{{ knative_serving_nm }}"
