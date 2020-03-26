@@ -6,6 +6,16 @@ The database credentials are stored in a `Secret` and then [mounted into the Kaf
 
 The Kafka Broker, [Kafka Connect](https://access.redhat.com/documentation/en-us/red_hat_amq/7.5/html-single/using_amq_streams_on_openshift/index#kafka-connect-str), and [Kafka Bridge](https://access.redhat.com/documentation/en-us/red_hat_amq/7.5/html-single/using_amq_streams_on_openshift/index#kafka-bridge-concepts-str) are all [authenticated via OAuth 2.0](https://access.redhat.com/documentation/en-us/red_hat_amq/7.5/html-single/using_amq_streams_on_openshift/index#assembly-oauth-str). [Red Hat Single Sign-on](https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.3) is installed and used as the authorization server. A new realm is automatically created and provisioned.
 
+## Assumptions / Requirements
+1. The OpenShift `sso73-postgresql-persistent` template is installed in the `openshift` namespace
+1. OperatorHub is available with the following operators available
+    - [AMQ Streams](https://access.redhat.com/documentation/en-us/red_hat_amq/7.6/html-single/using_amq_streams_on_openshift/index#key-features-operators_str)
+    - [OpenShift Serverless](https://access.redhat.com/documentation/en-us/openshift_container_platform/4.2/html-single/serverless_applications/index#serverless-getting-started)
+    - [OpenShift Container Security](https://github.com/quay/container-security-operator)
+    - [Prometheus](https://operatorhub.io/operator/prometheus)
+    - [Camel-K](https://operatorhub.io/operator/camel-k)
+    - [Grafana](https://operatorhub.io/operator/grafana-operator)
+
 ## Deployed Resource URLs
 All the below resource URLs are suffixed with the apps url of the cluster (i.e. for an RHPDS environment, `apps.cluster-##GUID##.##GUID##.example.opentlc.com`).
 
@@ -25,7 +35,7 @@ All the below resource URLs are suffixed with the apps url of the cluster (i.e. 
 ## Running the playbook
 To run this you would do something like
 ```bash
-$ ansible-playbook -vvv main.yml -e ocp_api_url=<OCP_API_URL> -e ocp_admin_pwd=<OCP_ADMIN_USER_PASSWORD>
+$ ansible-playbook -v main.yml -e ocp_api_url=<OCP_API_URL> -e ocp_admin_pwd=<OCP_ADMIN_USER_PASSWORD>
 ```
 
 You'll need to replace the following variables with appropriate values:
