@@ -15,6 +15,8 @@ The Kafka Broker, [Kafka Connect](https://access.redhat.com/documentation/en-us/
     - [Prometheus](https://operatorhub.io/operator/prometheus)
     - [Camel-K](https://operatorhub.io/operator/camel-k)
     - [Grafana](https://operatorhub.io/operator/grafana-operator)
+1. The `openssl` utility is installed
+1. The `keytool` utility is installed
 
 ## Deployed Resource URLs
 All the below resource URLs are suffixed with the apps url of the cluster (i.e. for an RHPDS environment, `apps.cluster-##GUID##.##GUID##.example.opentlc.com`).
