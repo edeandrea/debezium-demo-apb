@@ -8,7 +8,7 @@
 - [Backlog for enhancements](#backlog-for-enhancements)
   - PRs welcome!
 
-# Info
+## Info
 
 Ansible playbook for provisioning a [Debezium](https://debezium.io) demo using my [Summit Lab Spring Music application](https://github.com/edeandrea/summit-lab-spring-music/tree/pipeline) as the "monolith". The [Debezium connector](roles/Demo/objects/debezium-connector-config.json) is configured to use the [Outbox Event Router](https://debezium.io/documentation/reference/1.0/configuration/outbox-event-router.html).
 
