@@ -1,11 +1,11 @@
 # Table of Contents
 
 - [Info](#info)
-- Assumptions / Requirements
-- Deployed Resource URLs
-- Running the Playbook
-- Additional Resources
-- Backlog for enhancements
+- [Assumptions / Requirements](#assumptions--requirements)
+- [Deployed Resource URLs](#deployed-resource-urls)
+- [Running the Playbook](#running-the-playbook)
+- [Additional Resources](#additional-resources)
+- [Backlog for enhancements](#backlog-for-enhancements)
   - PRs welcome!
 
 # Info
