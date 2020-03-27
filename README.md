@@ -22,12 +22,12 @@ The Kafka Broker, [Kafka Connect](https://access.redhat.com/documentation/en-us/
 
 1. The OpenShift `sso73-postgresql-persistent` template is installed in the `openshift` namespace
 1. OperatorHub is available with the following operators available
-  - [AMQ Streams](https://access.redhat.com/documentation/en-us/red_hat_amq/7.6/html-single/using_amq_streams_on_openshift/index#key-features-operators_str)
-  - [OpenShift Serverless](https://access.redhat.com/documentation/en-us/openshift_container_platform/4.2/html-single/serverless_applications/index#serverless-getting-started)
-  - [OpenShift Container Security](https://github.com/quay/container-security-operator)
-  - [Prometheus](https://operatorhub.io/operator/prometheus)
-  - [Camel-K](https://operatorhub.io/operator/camel-k)
-  - [Grafana](https://operatorhub.io/operator/grafana-operator)
+    - [AMQ Streams](https://access.redhat.com/documentation/en-us/red_hat_amq/7.6/html-single/using_amq_streams_on_openshift/index#key-features-operators_str)
+    - [OpenShift Serverless](https://access.redhat.com/documentation/en-us/openshift_container_platform/4.2/html-single/serverless_applications/index#serverless-getting-started)
+    - [OpenShift Container Security](https://github.com/quay/container-security-operator)
+    - [Prometheus](https://operatorhub.io/operator/prometheus)
+    - [Camel-K](https://operatorhub.io/operator/camel-k)
+    - [Grafana](https://operatorhub.io/operator/grafana-operator)
 1. The `openssl` utility is installed
 1. The `keytool` utility is installed
 
