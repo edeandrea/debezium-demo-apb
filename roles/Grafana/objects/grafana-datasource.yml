@@ -6,14 +6,14 @@ metadata:
   labels:
     app.kubernetes.io/part-of: grafana
 spec:
-  name: Prometheus
+  name: prometheus.yaml
   datasources:
     - name: Prometheus
       type: prometheus
       access: proxy
       url: http://prometheus:9090
       isDefault: true
-      editable: true
+      editable: false
       jsonData:
         tlsSkipVerify: true
         timeInterval: "5s"
