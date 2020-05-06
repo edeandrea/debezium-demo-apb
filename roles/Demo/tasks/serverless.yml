@@ -30,8 +30,8 @@
         api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
         namespace: "{{ knative_serving_nm }}"
         definition: "{{ lookup('template', '../objects/knative-serving.yml') }}"
-		
-	  - name: Install KNative Eventing
+
+    - name: Install KNative Eventing
       k8s:
 	      api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
         namespace: "{{ knative_eventing_nm }}"
