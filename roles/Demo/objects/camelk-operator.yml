@@ -4,7 +4,7 @@ metadata:
   name: camel-k
   namespace: "{{ proj_nm_rh_operators }}"
 spec:
-  channel: alpha
+  channel: stable
   installPlanApproval: Automatic
   name: camel-k
   source: community-operators
