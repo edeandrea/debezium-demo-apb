@@ -4,8 +4,8 @@ metadata:
   name: container-security-operator
   namespace: "{{ proj_nm_rh_operators }}"
 spec:
-  channel: alpha
-  name: container-security-operator
-  source: community-operators
-  sourceNamespace: openshift-marketplace
+  channel: quay-v3.3
   installPlanApproval: Automatic
+  name: container-security-operator
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
