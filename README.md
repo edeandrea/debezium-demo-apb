@@ -47,6 +47,10 @@ All the below resource URLs are suffixed with the apps url of the cluster (i.e. 
   - http://prometheus-demo.##CLUSTER_SUFFIX##
 - Grafana
   - http://grafana-route-demo.##CLUSTER_SUFFIX##
+- [Red Hat Data Grid](https://www.redhat.com/en/technologies/jboss-middleware/data-grid) Console
+  - https://albums-rhdg-external-demo.##CLUSTER_SUFFIX##
+	- Username: `developer`
+	- Password: `developer`
 
 ## Running the playbook
 
@@ -79,6 +83,7 @@ This playbook also makes some assumptions about some things within the cluster. 
   - Includes `Kafka`, `KafkaConnect`, `KafkaConnector`, and `KafkaBridge` custom resources
 - [Kafdrop Template](roles/Demo/objects/kafdrop.yml)
 - [Red Hat SSO Realm Config](roles/Demo/objects/spring-music-cdc-realm.json)
+- [Red Hat Data Grid Config](roles/Demo/objects/rhdg.yml)
 - [Guide used](https://github.com/sigreen/amq-streams-oauth-ldap) for help in setting this all up
   - Thanks @sigreen!
 

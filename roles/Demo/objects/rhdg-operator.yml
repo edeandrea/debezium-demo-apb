@@ -1,0 +1,20 @@
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: "{{ proj_nm_demo }}"
+  namespace: "{{ proj_nm_demo }}"
+spec:
+  targetNamespaces:
+    - "{{ proj_nm_demo }}"
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: datagrid
+  namespace: "{{ proj_nm_demo }}"
+spec:
+  channel: 8.1.x
+  installPlanApproval: Automatic
+  name: datagrid
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace

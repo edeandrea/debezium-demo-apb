@@ -19,15 +19,15 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: admin
----
-apiVersion: operators.coreos.com/v1
-kind: OperatorGroup
-metadata:
-  name: "{{ proj_nm_demo }}-group"
-  namespace: "{{ proj_nm_demo }}"
-spec:
-  targetNamespaces:
-    - "{{ proj_nm_demo }}"
+# ---
+# apiVersion: operators.coreos.com/v1
+# kind: OperatorGroup
+# metadata:
+#   name: "{{ proj_nm_demo }}-group"
+#   namespace: "{{ proj_nm_demo }}"
+# spec:
+#   targetNamespaces:
+#     - "{{ proj_nm_demo }}"
 ---
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription

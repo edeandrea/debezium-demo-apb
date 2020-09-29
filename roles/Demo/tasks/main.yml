@@ -23,8 +23,8 @@
     - name: Deploy Container Security
       include_tasks: ./container-security.yml
 
-    - name: Deploy Serverless
-      include_tasks: ./serverless.yml
+    # - name: Deploy Serverless
+    #   include_tasks: ./serverless.yml
 
     - name: "Log into OpenShift as project user"
       k8s_auth:
@@ -55,6 +55,9 @@
 
     - name: Deploy AMQ Streams
       include_tasks: ./amq-streams.yml
+
+    - name: Deploy RHDG
+      include_tasks: ./rhdg.yml
 
     - name: Deploy App
       include_tasks: ./app.yml

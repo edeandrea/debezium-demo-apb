@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: rhdg-server-auth
+  namespace: "{{ proj_nm_demo }}"
+  labels:
+    app: spring-music-cdc
+data:
+  identities.yaml: >-
+    Y3JlZGVudGlhbHM6CiAgLSB1c2VybmFtZTogZGV2ZWxvcGVyCiAgICBwYXNzd29yZDogZGV2ZWxvcGVyCiAgLSB1c2VybmFtZTogb3BlcmF0b3IKICAgIHBhc3N3b3JkOiBvcGVyYXRvcgo=
+---
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: rhdg-client-auth
+  namespace: "{{ proj_nm_demo }}"
+  labels:
+    app: spring-music-cdc
+stringData:
+  username: developer
+  password: developer
+---
+apiVersion: infinispan.org/v1
+kind: Infinispan
+metadata:
+  name: albums-rhdg
+  namespace: "{{ proj_nm_demo }}"
+  labels:
+    app: spring-music-cdc
+spec:
+  replicas: 1
+  service:
+    type: DataGrid
+  expose:
+    type: Route
+  security:
+    endpointSecretName: rhdg-server-auth
+---
+apiVersion: infinispan.org/v2alpha1
+kind: Cache
+metadata:
+  name: albums
+  namespace: "{{ proj_nm_demo }}"
+  labels:
+    app: spring-music-cdc
+spec:
+  adminAuth:
+    secretName: rhdg-client-auth
+  clusterName: albums-rhdg
+  name: albums
+  templateName: org.infinispan.DIST_SYNC

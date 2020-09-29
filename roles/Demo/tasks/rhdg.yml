@@ -1,0 +1,51 @@
+- name: Provision RHDG
+  block:
+    - name: Log into OpenShift as admin
+      k8s_auth:
+        username: "{{ ocp_admin }}"
+        password: "{{ ocp_admin_pwd }}"
+      register: k8s_auth_results
+
+    - name: Install RHDG Operator
+      k8s:
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+        namespace: "{{ proj_nm_demo }}"
+        definition: "{{ lookup('template', '../objects/rhdg-operator.yml') }}"
+        
+    - name: Wait for RHDG operator to start
+      k8s_info:
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+        namespace: "{{ proj_nm_demo }}"
+        api_version: v1
+        kind: Pod
+        label_selectors:
+          - name = infinispan-operator-alm-owned
+      register: rhdg_operator_pod
+      until: rhdg_operator_pod.resources is defined and rhdg_operator_pod.resources|length == 1 and rhdg_operator_pod.resources[0].status.containerStatuses is defined and rhdg_operator_pod.resources[0].status.containerStatuses|length == 1 and rhdg_operator_pod.resources[0].status.containerStatuses[0] is defined and rhdg_operator_pod.resources[0].status.containerStatuses[0].ready == true
+      retries: 50
+      delay: 10
+
+    - name: Log out of OpenShift admin user
+      when: k8s_auth_results.k8s_auth.api_key is defined
+      k8s_auth:
+        state: absent
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+
+    - name: "Log into OpenShift as project user"
+      k8s_auth:
+        username: "{{ ocp_proj_user }}"
+        password: "{{ ocp_proj_user_pwd }}"
+      register: k8s_auth_results
+
+    - name: Deploy RHDG
+      k8s:
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+        namespace: "{{ proj_nm_demo }}"
+        definition: "{{ lookup('template', '../objects/rhdg.yml') }}"
+
+  always:
+    - name: If OpenShift login succeeded try to log out
+      when: k8s_auth_results.k8s_auth.api_key is defined
+      k8s_auth:
+        state: absent
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
