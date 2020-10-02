@@ -29,8 +29,9 @@ metadata:
   namespace: "{{ proj_nm_demo }}"
   labels:
     app: spring-music-cdc
+    app.kubernetes.io/part-of: albums-cache
 spec:
-  replicas: 1
+  replicas: 2
   service:
     type: DataGrid
   expose:

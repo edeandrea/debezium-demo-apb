@@ -1,0 +1,10 @@
+apiVersion: infinispan.org/v1
+kind: Infinispan
+metadata:
+  name: test
+spec:
+  replicas: 1
+  security:
+    endpointSecretName: connect-secret
+  expose:
+    type: Route

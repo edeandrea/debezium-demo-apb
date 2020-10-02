@@ -19,7 +19,7 @@
         api_version: v1
         kind: Pod
         label_selectors:
-          - name = knative-serving-operator
+          - name = knative-operator
       register: knative_operator_pod
       until: knative_operator_pod.resources is defined and knative_operator_pod.resources|length == 1 and knative_operator_pod.resources[0].status.containerStatuses is defined and knative_operator_pod.resources[0].status.containerStatuses|length == 1 and knative_operator_pod.resources[0].status.containerStatuses[0] is defined and knative_operator_pod.resources[0].status.containerStatuses[0].ready == true
       retries: 50

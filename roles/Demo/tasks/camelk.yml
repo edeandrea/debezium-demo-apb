@@ -15,7 +15,7 @@
     - name: Wait for CamelK operator to start
       k8s_info:
         api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
-        namespace: "{{ proj_nm_rh_operators }}"
+        namespace: "{{ proj_nm_demo }}"
         api_version: v1
         kind: Pod
         label_selectors:
@@ -36,6 +36,12 @@
         username: "{{ ocp_proj_user }}"
         password: "{{ ocp_proj_user_pwd }}"
       register: k8s_auth_results
+
+    - name: Install Camel-K RHDG Client
+      k8s:
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+        namespace: "{{ proj_nm_demo }}"
+        definition: "{{ lookup('template', '../objects/camelk-client.yml') }}"
 
   always:
     - name: If OpenShift login succeeded try to log out

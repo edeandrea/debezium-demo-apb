@@ -1,0 +1,155 @@
+apiVersion: camel.apache.org/v1
+kind: IntegrationPlatform
+metadata:
+  name: camel-k
+  namespace: "{{ proj_nm_demo }}"
+  labels:
+    app: camel-k
+spec:
+  configuration:
+    - type: repository
+      value: https://maven.repository.redhat.com/earlyaccess/all@id=redhat.ea
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: camelk-rhdg-client-config
+data:
+  application.properties: |2+
+    clientId=albums-rhdg-update
+    groupId=albums-rhdg-update
+    topic=outbox.Album.events
+    cacheName=albums
+    logging.level.com.redhat.dbzdemo.rhdg=DEBUG
+  
+  kafka.properties: |2+
+    consumer.group=albums-rhdg-update
+    camel.component.kafka.brokers=db-events-kafka-bootstrap:9092
+    camel.component.infinispan.configuration.hosts=albums-rhdg:11222
+    camel.component.infinispan.configuration.configurationUri=client.properties
+
+  client.properties: |2+
+    infinispan.client.hotrod.use_auth=true
+    infinispan.client.hotrod.auth_username=developer
+    infinispan.client.hotrod.auth_password=developer
+    infinispan.client.hotrod.auth_realm=default
+    infinispan.client.hotrod.sasl_mechanism=SCRAM-SHA-512
+    infinispan.client.hotrod.use_ssl=true
+    infinispan.client.hotrod.trust_store_path=/etc/camel/conf.d/_secrets/albums-rhdg-cert-secret/tls.crt
+    infinispan.client.hotrod.marshaller=org.infinispan.commons.marshall.JavaSerializationMarshaller
+    infinispan.client.hotrod.java_serial_whitelist=java.util.ArrayList,java.util.LinkedHashMap,java.util.HashMap
+    infinispan.client.hotrod.async_executor_factory=org.infinispan.client.hotrod.impl.async.DefaultAsyncExecutorFactory
+    infinispan.client.hotrod.default_executor_factory.pool_size=1
+    infinispan.client.hotrod.hash_function_impl.2=org.infinispan.client.hotrod.impl.consistenthash.ConsistentHashV2
+    infinispan.client.hotrod.tcp_no_delay=true
+    infinispan.client.hotrod.tcp_keep_alive=false
+    infinispan.client.hotrod.request_balancing_strategy=org.infinispan.client.hotrod.impl.transport.tcp.RoundRobinBalancingStrategy
+    infinispan.client.hotrod.key_size_estimate=64
+    infinispan.client.hotrod.value_size_estimate=512
+    infinispan.client.hotrod.force_return_values=false
+---
+apiVersion: camel.apache.org/v1
+kind: Integration
+metadata:
+  name: rhdg-update
+  labels:
+    app: spring-music-cdc
+    app.kubernetes.io/part-of: albums-cache
+spec:
+  configuration:
+    - type: configmap
+      value: camelk-rhdg-client-config
+    - type: secret
+      value: albums-rhdg-cert-secret
+  dependencies:
+    - 'camel:kafka'
+    - 'camel:jsonpath'
+    - 'camel:infinispan'
+    - 'camel:jackson'
+    - 'mvn:org.wildfly.security:wildfly-elytron:1.11.2.Final'
+  sources:
+    - name: RHDGUpdate.java
+      content: |
+        // camel-k: language=java dependency=camel-infinispan dependency=camel-kafka dependency=camel-jsonpath dependency=camel-jackson dependency=mvn:org.wildfly.security:wildfly-elytron:1.11.2.Final configmap=camelk-rhdg-client-config secret=albums-rhdg-cert-secret
+        package com.redhat.dbzdemo.rhdg;
+
+        import org.apache.camel.builder.RouteBuilder;
+        import org.apache.camel.component.infinispan.InfinispanConstants;
+        import org.apache.camel.component.infinispan.InfinispanOperation;
+        import org.apache.camel.model.dataformat.JsonLibrary;
+
+        import com.fasterxml.jackson.core.JsonProcessingException;
+        import com.fasterxml.jackson.databind.ObjectMapper;
+
+        import java.util.Map;
+        import java.util.HashMap;
+
+        public class RHDGUpdate extends RouteBuilder {
+          private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+          @SuppressWarnings("unchecked")
+          private Map<String, Object> getPayload(Map<String, Object> body) {
+            return (Map<String, Object>) body.getOrDefault("payload", new HashMap<String, Object>());
+          }
+
+          public String getAlbumId(Map<String, Object> body) {
+            return (String) getPayload(body).get("aggregateId");
+          }
+
+          @SuppressWarnings("unchecked")
+          public String getAlbum(Map<String, Object> body) {
+            try {
+              String albumPayload = (String) ((Map<String, Object>) getPayload(body)).getOrDefault("payload", "");
+              Map<String, Object> albumPayloadMap = OBJECT_MAPPER.readValue(albumPayload, Map.class);
+              Map<String, Object> album = (Map<String, Object>) albumPayloadMap.get("album");
+
+              return OBJECT_MAPPER.writeValueAsString(album);
+            }
+            catch (JsonProcessingException ex) {
+              throw new RuntimeException(ex);
+            }
+          }
+
+          @Override
+          public void configure() throws Exception {
+            from("kafka:{{ '{{' }}topic}}?groupId={{ '{{' }}groupId}}&clientId={{ '{{' }}clientId}}")
+              .routeId("{{ '{{' }}groupId}}")
+              .log("Processing event: ${body}")
+              .choice()
+                .when()
+                  .jsonpath("$.payload[?(@.eventType == 'ALBUM_CREATED')]")
+                  .to("direct:created")
+                .when()
+                  .jsonpath("$.payload[?(@.eventType == 'ALBUM_DELETED')]")
+                  .to("direct:deleted")
+                .when()
+                  .jsonpath("$.payload[?(@.eventType == 'ALBUM_UPDATED')]")
+                  .to("direct:updated");
+                    
+            from("direct:created")
+              .routeId("album-created")
+              .log("Event is ALBUM_CREATED")
+              .unmarshal().json(JsonLibrary.Jackson, Map.class)
+              .setHeader(InfinispanConstants.OPERATION).constant(InfinispanOperation.PUT)
+              .setHeader(InfinispanConstants.KEY).method(this, "getAlbumId(${body})")
+              .setHeader(InfinispanConstants.VALUE).method(this, "getAlbum(${body})")
+              .to("infinispan:{{ '{{' }}cacheName}}");
+
+            from("direct:deleted")
+              .routeId("album-deleted")
+              .log("Event is ALBUM_DELETED")
+              .unmarshal().json(JsonLibrary.Jackson, Map.class)
+              .setHeader(InfinispanConstants.OPERATION).constant(InfinispanOperation.REMOVE)
+              .setHeader(InfinispanConstants.KEY).method(this, "getAlbumId(${body})")
+              .to("infinispan:{{ '{{' }}cacheName}}");
+
+            from("direct:updated")
+              .routeId("album-updated")
+              .log("Event is ALBUM_UPDATED")
+              .unmarshal().json(JsonLibrary.Jackson, Map.class)
+              .setHeader(InfinispanConstants.OPERATION).constant(InfinispanOperation.PUT)
+              .setHeader(InfinispanConstants.KEY).method(this, "getAlbumId(${body})")
+              .setHeader(InfinispanConstants.VALUE).method(this, "getAlbum(${body})")
+              .to("infinispan:{{ '{{' }}cacheName}}");
+          }
+        }

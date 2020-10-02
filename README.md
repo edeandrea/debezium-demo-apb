@@ -14,6 +14,8 @@ Ansible playbook for provisioning a [Debezium](https://debezium.io) demo using m
 
 The [application](https://github.com/edeandrea/summit-lab-spring-music/tree/pipeline) is a simple Spring Boot application connected to a MySQL database. We'll install a 3 replica Kafka cluster with Kafka connect and then install the [Debezium MySQL connector](https://debezium.io/documentation/reference/1.0/connectors/mysql.html).
 
+Once the events get into Kafka, a [camel-k application](roles/Demo/objects/camelk-client.yml) runs and updates a Red Hat Data Grid cache according to contents from the event (`ALBUM_CREATED`/`ALBUM_UPDATED`/`ALBUM_DELETED`).
+
 The database credentials are stored in a `Secret` and then [mounted into the Kafka Connect cluster](https://strimzi.io/docs/latest/#proc-kafka-connect-mounting-volumes-deployment-configuration-kafka-connect).
 
 The Kafka Broker, [Kafka Connect](https://access.redhat.com/documentation/en-us/red_hat_amq/7.5/html-single/using_amq_streams_on_openshift/index#kafka-connect-str), and [Kafka Bridge](https://access.redhat.com/documentation/en-us/red_hat_amq/7.5/html-single/using_amq_streams_on_openshift/index#kafka-bridge-concepts-str) are all [authenticated via OAuth 2.0](https://access.redhat.com/documentation/en-us/red_hat_amq/7.5/html-single/using_amq_streams_on_openshift/index#assembly-oauth-str). [Red Hat Single Sign-on](https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.3) is installed and used as the authorization server. A new realm is automatically created and provisioned.
@@ -23,10 +25,11 @@ The Kafka Broker, [Kafka Connect](https://access.redhat.com/documentation/en-us/
 1. The OpenShift `sso73-postgresql-persistent` template is installed in the `openshift` namespace
 1. OperatorHub is available with the following operators available
     - [AMQ Streams](https://access.redhat.com/documentation/en-us/red_hat_amq/7.6/html-single/using_amq_streams_on_openshift/index#key-features-operators_str)
-    - [OpenShift Serverless](https://access.redhat.com/documentation/en-us/openshift_container_platform/4.2/html-single/serverless_applications/index#serverless-getting-started)
+    - [OpenShift Serverless](https://access.redhat.com/documentation/en-us/openshift_container_platform/4.5/html-single/serverless_applications/index#serverless-getting-started)
     - [OpenShift Container Security](https://github.com/quay/container-security-operator)
+    - [Red Hat Data Grid](https://access.redhat.com/documentation/en-us/red_hat_data_grid/8.1/html-single/running_data_grid_on_openshift/index#installation)
+    - [Camel K](https://access.redhat.com/documentation/en-us/red_hat_integration/2020-q2/html-single/deploying_camel_k_integrations_on_openshift/index#installing-camel-k-operatorhub)
     - [Prometheus](https://operatorhub.io/operator/prometheus)
-    - [Camel-K](https://operatorhub.io/operator/camel-k)
     - [Grafana](https://operatorhub.io/operator/grafana-operator)
 1. The `openssl` utility is installed
 1. The `keytool` utility is installed
@@ -49,8 +52,8 @@ All the below resource URLs are suffixed with the apps url of the cluster (i.e. 
   - http://grafana-route-demo.##CLUSTER_SUFFIX##
 - [Red Hat Data Grid](https://www.redhat.com/en/technologies/jboss-middleware/data-grid) Console
   - https://albums-rhdg-external-demo.##CLUSTER_SUFFIX##
-	- Username: `developer`
-	- Password: `developer`
+  - Username: `developer`
+  - Password: `developer`
 
 ## Running the playbook
 
@@ -84,6 +87,7 @@ This playbook also makes some assumptions about some things within the cluster. 
 - [Kafdrop Template](roles/Demo/objects/kafdrop.yml)
 - [Red Hat SSO Realm Config](roles/Demo/objects/spring-music-cdc-realm.json)
 - [Red Hat Data Grid Config](roles/Demo/objects/rhdg.yml)
+- [Camel K Config](roles/Demo/objects/camelk-client.yml)
 - [Guide used](https://github.com/sigreen/amq-streams-oauth-ldap) for help in setting this all up
   - Thanks @sigreen!
 
