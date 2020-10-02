@@ -36,7 +36,7 @@ data:
     infinispan.client.hotrod.sasl_mechanism=SCRAM-SHA-512
     infinispan.client.hotrod.use_ssl=true
     infinispan.client.hotrod.trust_store_path=/etc/camel/conf.d/_secrets/albums-rhdg-cert-secret/tls.crt
-    infinispan.client.hotrod.marshaller=org.infinispan.commons.marshall.JavaSerializationMarshaller
+    infinispan.client.hotrod.marshaller=org.infinispan.commons.marshall.UTF8StringMarshaller
     infinispan.client.hotrod.java_serial_whitelist=java.util.ArrayList,java.util.LinkedHashMap,java.util.HashMap
     infinispan.client.hotrod.async_executor_factory=org.infinispan.client.hotrod.impl.async.DefaultAsyncExecutorFactory
     infinispan.client.hotrod.default_executor_factory.pool_size=1
