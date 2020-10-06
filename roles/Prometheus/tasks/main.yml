@@ -33,11 +33,18 @@
         name: prometheus
       register: prometheus_svc
 
-    - name: Deploy Service Monitor
+    - name: Deploy Kafka Service Monitor
       k8s:
         api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
         namespace: "{{ proj_nm_demo }}"
         definition: "{{ lookup('template', '../objects/kafka-service-monitor.yml') }}"
+      when: prometheus_svc.resources|length == 0
+
+    - name: Deploy RHDG Service Monitor
+      k8s:
+        api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+        namespace: "{{ proj_nm_demo }}"
+        definition: "{{ lookup('template', '../objects/rhdg-service-monitor.yml') }}"
       when: prometheus_svc.resources|length == 0
 
     - name: Log out of OpenShift admin user

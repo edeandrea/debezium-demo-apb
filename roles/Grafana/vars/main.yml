@@ -2,3 +2,4 @@ grafana_dashboards:
   - kafka
   - zookeeper
   - kafka-exporter
+  - rhdg-cache

@@ -1,0 +1,32 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: rhdg-service-monitor
+  namespace: "{{ proj_nm_demo }}"
+  labels:
+    app: spring-music-cdc
+spec:
+  endpoints:
+    - targetPort: 11222
+      path: /metrics
+      honorLabels: true
+      basicAuth:
+        password:
+          key: password
+          name: rhdg-client-auth
+        username:
+          key: username
+          name: rhdg-client-auth
+      interval: 30s
+      scrapeTimeout: 10s
+      scheme: https
+      tlsConfig:
+        serverName: albums-rhdg
+        insecureSkipVerify: true
+  namespaceSelector:
+    matchNames:
+      - "{{ proj_nm_demo }}"
+  selector:
+    matchLabels:
+      clusterName: albums-rhdg
+      app: infinispan-service
