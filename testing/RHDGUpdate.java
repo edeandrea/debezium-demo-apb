@@ -40,7 +40,7 @@ public class RHDGUpdate extends RouteBuilder {
 
   @Override
   public void configure() throws Exception {
-		from("kafka:{{topic}}?groupId={{groupId}}&clientId={{clientId}}")
+		from("kafka:{{topic}}?groupId={{groupId}}&clientId={{clientId}}&autoOffsetReset=earliest")
 			.routeId("{{groupId}}")
 			.log("Processing event: ${body}")
 			.choice()
