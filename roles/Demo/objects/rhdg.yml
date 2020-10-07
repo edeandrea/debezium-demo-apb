@@ -34,6 +34,8 @@ spec:
   replicas: 2
   service:
     type: DataGrid
+    container:
+      storage: 2Gi
   expose:
     type: Route
   security:
@@ -51,4 +53,4 @@ spec:
     secretName: rhdg-client-auth
   clusterName: albums-rhdg
   name: albums
-  templateName: org.infinispan.DIST_SYNC
+  template: <infinispan><cache-container><distributed-cache name="albums" mode="SYNC" statistics="true" remote-timeout="17500"><persistence><file-store/></persistence><state-transfer enabled="true" timeout="60000"/><transaction mode="NONE"/><locking striping="false" concurrency-level="1000" acquire-timeout="15000"/></distributed-cache></cache-container></infinispan>
