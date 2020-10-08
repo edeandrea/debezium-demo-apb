@@ -5,6 +5,7 @@ metadata:
   labels:
     app: kafdrop
     app.kubernetes.io/part-of: spring-music-cdc
+    app.openshift.io/runtime: java
   annotations:
     app.openshift.io/connects-to: db-events-kafka
     app.openshift.io/vcs-uri: 'https://github.com/obsidiandynamics/kafdrop'
