@@ -20,6 +20,10 @@ The database credentials are stored in a `Secret` and then [mounted into the Kaf
 
 The Kafka Broker, [Kafka Connect](https://access.redhat.com/documentation/en-us/red_hat_amq/7.5/html-single/using_amq_streams_on_openshift/index#kafka-connect-str), and [Kafka Bridge](https://access.redhat.com/documentation/en-us/red_hat_amq/7.5/html-single/using_amq_streams_on_openshift/index#kafka-bridge-concepts-str) are all [authenticated via OAuth 2.0](https://access.redhat.com/documentation/en-us/red_hat_amq/7.5/html-single/using_amq_streams_on_openshift/index#assembly-oauth-str). [Red Hat Single Sign-on](https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.3) is installed and used as the authorization server. A new realm is automatically created and provisioned.
 
+Once completed, the resulting output of everything in the OpenShift Topology view should look something like
+
+![DBZ Demo](images/dbz-demo.png)
+
 ## Assumptions / Requirements
 
 1. The OpenShift `sso73-postgresql-persistent` template is installed in the `openshift` namespace
