@@ -107,3 +107,4 @@ PRs welcome!
   - This will allow removal of the `plain` listener on the broker
 - [Integrate the `KafkaBridge` with something (3scale?)](https://github.com/edeandrea/debezium-demo-apb/issues/8)
 - [Build some kind of consumer(s) to read the messages & do something with them](https://github.com/edeandrea/debezium-demo-apb/issues/9)
+    - Currently there is a Red Hat Data Grid cache that gets updated by a Camel-K application. I'd like to build another application that uses the cache data in some way.
