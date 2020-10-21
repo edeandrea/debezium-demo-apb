@@ -67,10 +67,14 @@ spec:
     - 'camel:infinispan'
     - 'camel:jackson'
     - 'mvn:org.wildfly.security:wildfly-elytron:1.11.2.Final'
-  sources:
+  traits:
+	  quarkus:
+		  configuration:
+			  enabled: false
+	sources:
     - name: RHDGUpdate.java
       content: |
-        // camel-k: language=java dependency=camel-infinispan dependency=camel-kafka dependency=camel-jsonpath dependency=camel-jackson dependency=mvn:org.wildfly.security:wildfly-elytron:1.11.2.Final configmap=camelk-rhdg-client-config secret=albums-rhdg-cert-secret
+        // camel-k: language=java dependency=camel-infinispan dependency=camel-kafka dependency=camel-jsonpath dependency=camel-jackson dependency=mvn:org.wildfly.security:wildfly-elytron:1.11.2.Final configmap=camelk-rhdg-client-config secret=albums-rhdg-cert-secret trait=quarkus.enabled=false
         package com.redhat.dbzdemo.rhdg;
 
         import org.apache.camel.builder.RouteBuilder;
