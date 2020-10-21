@@ -68,10 +68,10 @@ spec:
     - 'camel:jackson'
     - 'mvn:org.wildfly.security:wildfly-elytron:1.11.2.Final'
   traits:
-	  quarkus:
-		  configuration:
-			  enabled: false
-	sources:
+    quarkus:
+      configuration:
+        enabled: false
+  sources:
     - name: RHDGUpdate.java
       content: |
         // camel-k: language=java dependency=camel-infinispan dependency=camel-kafka dependency=camel-jsonpath dependency=camel-jackson dependency=mvn:org.wildfly.security:wildfly-elytron:1.11.2.Final configmap=camelk-rhdg-client-config secret=albums-rhdg-cert-secret trait=quarkus.enabled=false
