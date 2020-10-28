@@ -209,6 +209,8 @@ objects:
                 app.kubernetes.io/part-of: spring-music-cdc
                 app: spring-music-cdc
                 template: spring-music-cdc
+              annotations:
+                app.openshift.io/connects-to: sso
         metrics:
           # Inspired by Zookeeper rules
           # https://github.com/prometheus/jmx_exporter/blob/master/example_configs/zookeeper.yaml
@@ -295,7 +297,7 @@ objects:
               app.kubernetes.io/part-of: spring-music-cdc
               template: spring-music-cdc
             annotations:
-              app.openshift.io/connects-to: db-events-kafka,summit-lab-spring-music-db,sso
+              app.openshift.io/connects-to: "db-events-kafka,summit-lab-spring-music-db,sso"
   - kind: KafkaBridge
     apiVersion: kafka.strimzi.io/v1alpha1
     metadata:
