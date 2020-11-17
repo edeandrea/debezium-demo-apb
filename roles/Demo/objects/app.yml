@@ -16,7 +16,11 @@ spec:
         openshift.io/imported-from: 'quay.io/edeandrea/spring-music:latest'
       from:
         kind: DockerImage
-        name: quay.io/edeandrea/spring-music:latest
+        name: 'quay.io/edeandrea/spring-music:latest'
+      importPolicy:
+        scheduled: true
+      referencePolicy:
+        type: Source
 ---
 kind: DeploymentConfig
 apiVersion: apps.openshift.io/v1
