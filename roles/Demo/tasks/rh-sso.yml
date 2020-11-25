@@ -18,7 +18,7 @@
     - name: "Deploy RH-SSO"
       include: ../../common/runOcShell.yml
       vars:
-        oc_command: "oc -n {{ proj_nm_demo }} new-app --name=rh-sso --labels='app.kubernetes.io/part-of=rh-sso,app.kubernetes.io/name=rh-sso' --template=sso74-postgresql-persistent -p SSO_ADMIN_USERNAME={{ rh_sso.admin.username }} -p SSO_ADMIN_PASSWORD={{ rh_sso.admin.password }} -p SSO_SERVICE_USERNAME={{ rh_sso.service.username }} -p SSO_SERVICE_PASSWORD={{ rh_sso.service.password }} -p SSO_TRUSTSTORE=truststore.jks -p SSO_TRUSTSTORE_PASSWORD=password -p SSO_TRUSTSTORE_SECRET={{ cert_secret_name }} -p HTTPS_SECRET={{ cert_secret_name }} -p HTTPS_KEYSTORE=keystore.jks -p HTTPS_NAME=jboss -p HTTPS_PASSWORD=password -p JGROUPS_ENCRYPT_SECRET={{ cert_secret_name }} -p JGROUPS_ENCRYPT_KEYSTORE=jgroups.jceks -p JGROUPS_ENCRYPT_NAME=secret-key -p JGROUPS_ENCRYPT_PASSWORD=password -p POSTGRESQL_IMAGE_STREAM_TAG=9.6 -e JAVA_OPTS_APPEND='-Dkeycloak.profile.feature.scripts=enabled -Dkeycloak.profile.feature.upload_scripts=enabled'"
+        oc_command: "oc -n {{ proj_nm_demo }} new-app --name=rh-sso --labels='app.kubernetes.io/part-of=rh-sso,app.kubernetes.io/name=rh-sso' --template=sso74-postgresql-persistent -p SSO_ADMIN_USERNAME={{ rh_sso.admin.username }} -p SSO_ADMIN_PASSWORD={{ rh_sso.admin.password }} -p SSO_SERVICE_USERNAME={{ rh_sso.service.username }} -p SSO_SERVICE_PASSWORD={{ rh_sso.service.password }} -p SSO_TRUSTSTORE=truststore.jks -p SSO_TRUSTSTORE_PASSWORD=password -p SSO_TRUSTSTORE_SECRET={{ cert_secret_name }} -p HTTPS_SECRET={{ cert_secret_name }} -p HTTPS_KEYSTORE=keystore.jks -p HTTPS_NAME=jboss -p HTTPS_PASSWORD=password -p JGROUPS_ENCRYPT_SECRET={{ cert_secret_name }} -p JGROUPS_ENCRYPT_KEYSTORE=jgroups.jceks -p JGROUPS_ENCRYPT_NAME=secret-key -p JGROUPS_ENCRYPT_PASSWORD=password -p POSTGRESQL_IMAGE_STREAM_TAG=10-el8 -e JAVA_OPTS_APPEND='-Dkeycloak.profile.feature.scripts=enabled -Dkeycloak.profile.feature.upload_scripts=enabled'"
       when: rh_sso_dc.resources|length == 0
 
     - name: "Wait for RH-SSO to spin up"
@@ -59,7 +59,7 @@
           metadata:
             labels:
               app.openshift.io/runtime: postgresql
-              app.openshift.io/runtime-version: '9.6'
+              app.openshift.io/runtime-version: '10'
 
     - name: "Set RH-SSO URL"
       set_fact:

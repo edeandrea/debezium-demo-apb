@@ -31,7 +31,7 @@ metadata:
     app.kubernetes.io/instance: spring-music
     app.kubernetes.io/name: java
     app.kubernetes.io/part-of: spring-music
-    app.openshift.io/runtime: spring
+    app.openshift.io/runtime: spring-boot
     app.openshift.io/runtime-version: '11'
   name: spring-music
   annotations:
