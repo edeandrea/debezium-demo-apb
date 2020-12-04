@@ -1,5 +1,8 @@
 grafana_dashboards:
   - kafka
   - zookeeper
+  - operators
   - kafka-exporter
+  - kafka-connect
+  - kafka-bridge
   - rhdg-cache
