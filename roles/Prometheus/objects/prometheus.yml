@@ -14,19 +14,28 @@ spec:
   serviceMonitorSelector:
     matchLabels:
       app: spring-music-cdc
+  podMonitorSelector:
+    matchLabels:
+      app: spring-music-cdc
   resources:
     requests:
       memory: 400Mi
   enableAdminAPI: false
+  storage:
+    volumeClaimTemplate:
+      spec:
+        resources:
+          requests:
+            storage: 10Gi
   ruleSelector:
     matchLabels:
       role: alert-rules
       app: spring-music-cdc
-  alerting:
-    alertmanagers:
-    - namespace: "{{ proj_nm_demo }}"
-      name: alertmanager
-      port: alertmanager
+  # alerting:
+  #   alertmanagers:
+  #   - namespace: "{{ proj_nm_demo }}"
+  #     name: alertmanager
+  #     port: alertmanager
   additionalScrapeConfigs:
     name: additional-scrape-configs
     key: prometheus-additional.yml

@@ -29,21 +29,6 @@ roleRef:
 #   targetNamespaces:
 #     - "{{ proj_nm_demo }}"
 ---
-apiVersion: operators.coreos.com/v1alpha1
-kind: Subscription
-metadata:
-  name: prometheus
-  namespace: "{{ proj_nm_demo }}"
-  labels:
-    app.kubernetes.io/part-of: prometheus
-    app: prometheus
-spec:
-  channel: beta
-  installPlanApproval: Automatic
-  name: prometheus
-  source: community-operators
-  sourceNamespace: openshift-marketplace
----
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -55,6 +40,7 @@ rules:
   - apiGroups: [""]
     resources:
       - nodes
+      - nodes/metrics
       - nodes/proxy
       - services
       - endpoints
@@ -64,6 +50,7 @@ rules:
       - extensions
     resources:
       - ingresses
+      - configmaps
     verbs: ["get", "list", "watch"]
   - nonResourceURLs: ["/metrics"]
     verbs: ["get"]
@@ -91,3 +78,18 @@ subjects:
   - kind: ServiceAccount
     name: prometheus-server
     namespace: "{{ proj_nm_demo }}"
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: prometheus
+  namespace: "{{ proj_nm_demo }}"
+  labels:
+    app.kubernetes.io/part-of: prometheus
+    app: prometheus
+spec:
+  channel: beta
+  installPlanApproval: Automatic
+  name: prometheus
+  source: community-operators
+  sourceNamespace: openshift-marketplace

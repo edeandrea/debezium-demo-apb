@@ -1,12 +1,12 @@
 apiVersion: integreatly.org/v1alpha1
 kind: GrafanaDashboard
 metadata:
-  name: zookeeper
+  name: kafka-connect
   labels:
     grafana-dashboard-for: spring-music-cdc
     app.kubernetes.io/part-of: grafana
 spec:
-  name: zookeeper.json
+  name: kafka-connect.json
   json: |
     {
       "annotations": {
@@ -17,9 +17,7 @@ spec:
             "enable": true,
             "hide": true,
             "iconColor": "rgba(0, 211, 255, 1)",
-            "limit": 100,
             "name": "Annotations & Alerts",
-            "showIn": 0,
             "type": "dashboard"
           }
         ]
@@ -28,33 +26,19 @@ spec:
       "gnetId": null,
       "graphTooltip": 0,
       "id": null,
-      "iteration": 1600637492559,
+      "iteration": 1600638818861,
       "links": [],
       "panels": [
         {
-          "collapsed": false,
-          "gridPos": {
-            "h": 1,
-            "w": 24,
-            "x": 0,
-            "y": 0
-          },
-          "id": 26,
-          "panels": [],
-          "title": "Zookeeper",
-          "type": "row"
-        },
-        {
           "cacheTimeout": null,
           "colorBackground": false,
-          "colorValue": true,
+          "colorValue": false,
           "colors": [
-            "#d44a3a",
+            "rgba(245, 54, 54, 0.9)",
             "rgba(237, 129, 40, 0.89)",
-            "#299c46"
+            "rgba(50, 172, 45, 0.97)"
           ],
           "datasource": "Prometheus",
-          "description": "Quorum Size of Zookeeper ensemble",
           "format": "none",
           "gauge": {
             "maxValue": 100,
@@ -64,12 +48,13 @@ spec:
             "thresholdMarkers": true
           },
           "gridPos": {
-            "h": 4,
+            "h": 7,
             "w": 4,
             "x": 0,
-            "y": 1
+            "y": 0
           },
-          "id": 52,
+          "height": 250,
+          "id": 26,
           "interval": null,
           "links": [],
           "mappingType": 1,
@@ -97,6 +82,7 @@ spec:
               "to": "null"
             }
           ],
+          "span": 2,
           "sparkline": {
             "fillColor": "rgba(31, 118, 189, 0.18)",
             "full": false,
@@ -106,14 +92,15 @@ spec:
           "tableColumn": "",
           "targets": [
             {
-              "expr": "max(zookeeper_quorumsize{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",strimzi_io_kind=\"Kafka\"})",
+              "expr": "sum(kafka_connect_worker_connector_count{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"})",
               "format": "time_series",
-              "intervalFactor": 1,
-              "refId": "A"
+              "intervalFactor": 2,
+              "refId": "A",
+              "step": 40
             }
           ],
-          "thresholds": "2,3",
-          "title": "Quorum Size",
+          "thresholds": "",
+          "title": "Number of Connectors",
           "type": "singlestat",
           "valueFontSize": "200%",
           "valueMaps": [
@@ -128,14 +115,13 @@ spec:
         {
           "cacheTimeout": null,
           "colorBackground": false,
-          "colorValue": true,
+          "colorValue": false,
           "colors": [
-            "#299c46",
+            "rgba(245, 54, 54, 0.9)",
             "rgba(237, 129, 40, 0.89)",
-            "#d44a3a"
+            "rgba(50, 172, 45, 0.97)"
           ],
           "datasource": "Prometheus",
-          "description": "Number of Alive Connections",
           "format": "none",
           "gauge": {
             "maxValue": 100,
@@ -145,12 +131,12 @@ spec:
             "thresholdMarkers": true
           },
           "gridPos": {
-            "h": 4,
+            "h": 7,
             "w": 4,
             "x": 4,
-            "y": 1
+            "y": 0
           },
-          "id": 54,
+          "id": 27,
           "interval": null,
           "links": [],
           "mappingType": 1,
@@ -178,6 +164,7 @@ spec:
               "to": "null"
             }
           ],
+          "span": 2,
           "sparkline": {
             "fillColor": "rgba(31, 118, 189, 0.18)",
             "full": false,
@@ -187,14 +174,15 @@ spec:
           "tableColumn": "",
           "targets": [
             {
-              "expr": "sum(zookeeper_numaliveconnections{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",strimzi_io_kind=\"Kafka\",kubernetes_pod_name=~\"$strimzi_cluster_name-$zk_node\"})",
+              "expr": "sum(kafka_connect_worker_task_count{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"})",
               "format": "time_series",
-              "intervalFactor": 1,
-              "refId": "A"
+              "intervalFactor": 2,
+              "refId": "A",
+              "step": 40
             }
           ],
-          "thresholds": "60,120",
-          "title": "Alive Connections",
+          "thresholds": "",
+          "title": "Number of Tasks",
           "type": "singlestat",
           "valueFontSize": "200%",
           "valueMaps": [
@@ -212,15 +200,14 @@ spec:
           "dashLength": 10,
           "dashes": false,
           "datasource": "Prometheus",
-          "description": "Number of queued requests in the server. This goes up when the server receives more requests than it can process",
           "fill": 1,
           "gridPos": {
-            "h": 8,
-            "w": 16,
+            "h": 7,
+            "w": 8,
             "x": 8,
-            "y": 1
+            "y": 0
           },
-          "id": 12,
+          "id": 28,
           "legend": {
             "avg": false,
             "current": false,
@@ -240,14 +227,12 @@ spec:
           "renderer": "flot",
           "seriesOverrides": [],
           "spaceLength": 10,
-          "stack": false,
+          "stack": true,
           "steppedLine": false,
           "targets": [
             {
-              "expr": "zookeeper_outstandingrequests{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",strimzi_io_kind=\"Kafka\",kubernetes_pod_name=~\"$strimzi_cluster_name-$zk_node\"}",
-              "format": "time_series",
+              "expr": "sum(rate(kafka_consumer_incoming_byte_total{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"}[1m])) by (kubernetes_pod_name)",
               "interval": "",
-              "intervalFactor": 1,
               "legendFormat": "{{kubernetes_pod_name}}",
               "refId": "A"
             }
@@ -255,7 +240,7 @@ spec:
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Outstanding Requests",
+          "title": "(Sink/Consumers) Incoming bytes per second",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -271,11 +256,11 @@ spec:
           },
           "yaxes": [
             {
-              "format": "short",
-              "label": null,
+              "format": "Bps",
+              "label": "Bytes/sec",
               "logBase": 1,
               "max": null,
-              "min": null,
+              "min": "0",
               "show": true
             },
             {
@@ -293,181 +278,19 @@ spec:
           }
         },
         {
-          "cacheTimeout": null,
-          "colorBackground": false,
-          "colorValue": true,
-          "colors": [
-            "#299c46",
-            "rgba(237, 129, 40, 0.89)",
-            "#d44a3a"
-          ],
-          "datasource": "Prometheus",
-          "format": "none",
-          "gauge": {
-            "maxValue": 100,
-            "minValue": 0,
-            "show": false,
-            "thresholdLabels": false,
-            "thresholdMarkers": true
-          },
-          "gridPos": {
-            "h": 4,
-            "w": 4,
-            "x": 0,
-            "y": 5
-          },
-          "id": 64,
-          "interval": null,
-          "links": [],
-          "mappingType": 1,
-          "mappingTypes": [
-            {
-              "name": "value to text",
-              "value": 1
-            },
-            {
-              "name": "range to text",
-              "value": 2
-            }
-          ],
-          "maxDataPoints": 100,
-          "nullPointMode": "connected",
-          "nullText": null,
-          "postfix": "",
-          "postfixFontSize": "50%",
-          "prefix": "",
-          "prefixFontSize": "50%",
-          "rangeMaps": [
-            {
-              "from": "null",
-              "text": "N/A",
-              "to": "null"
-            }
-          ],
-          "sparkline": {
-            "fillColor": "rgba(31, 118, 189, 0.18)",
-            "full": false,
-            "lineColor": "rgb(31, 120, 193)",
-            "show": false
-          },
-          "tableColumn": "",
-          "targets": [
-            {
-              "expr": "avg(zookeeper_inmemorydatatree_nodecount{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",strimzi_io_kind=\"Kafka\"})",
-              "format": "time_series",
-              "intervalFactor": 1,
-              "refId": "A"
-            }
-          ],
-          "thresholds": "500,800",
-          "title": "Number of ZNodes",
-          "type": "singlestat",
-          "valueFontSize": "200%",
-          "valueMaps": [
-            {
-              "op": "=",
-              "text": "N/A",
-              "value": "null"
-            }
-          ],
-          "valueName": "current"
-        },
-        {
-          "cacheTimeout": null,
-          "colorBackground": false,
-          "colorValue": true,
-          "colors": [
-            "#299c46",
-            "rgba(237, 129, 40, 0.89)",
-            "#d44a3a"
-          ],
-          "datasource": "Prometheus",
-          "description": "Number of Watchers",
-          "format": "none",
-          "gauge": {
-            "maxValue": 100,
-            "minValue": 0,
-            "show": false,
-            "thresholdLabels": false,
-            "thresholdMarkers": true
-          },
-          "gridPos": {
-            "h": 4,
-            "w": 4,
-            "x": 4,
-            "y": 5
-          },
-          "id": 66,
-          "interval": null,
-          "links": [],
-          "mappingType": 1,
-          "mappingTypes": [
-            {
-              "name": "value to text",
-              "value": 1
-            },
-            {
-              "name": "range to text",
-              "value": 2
-            }
-          ],
-          "maxDataPoints": 100,
-          "nullPointMode": "connected",
-          "nullText": null,
-          "postfix": "",
-          "postfixFontSize": "50%",
-          "prefix": "",
-          "prefixFontSize": "50%",
-          "rangeMaps": [
-            {
-              "from": "null",
-              "text": "N/A",
-              "to": "null"
-            }
-          ],
-          "sparkline": {
-            "fillColor": "rgba(31, 118, 189, 0.18)",
-            "full": false,
-            "lineColor": "rgb(31, 120, 193)",
-            "show": false
-          },
-          "tableColumn": "",
-          "targets": [
-            {
-              "expr": "sum(zookeeper_inmemorydatatree_watchcount{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",strimzi_io_kind=\"Kafka\",kubernetes_pod_name=~\"$strimzi_cluster_name-$zk_node\"})",
-              "format": "time_series",
-              "intervalFactor": 1,
-              "refId": "A"
-            }
-          ],
-          "thresholds": "100,200",
-          "title": "Number of Watchers",
-          "type": "singlestat",
-          "valueFontSize": "200%",
-          "valueMaps": [
-            {
-              "op": "=",
-              "text": "N/A",
-              "value": "null"
-            }
-          ],
-          "valueName": "current"
-        },
-        {
           "aliasColors": {},
           "bars": false,
           "dashLength": 10,
           "dashes": false,
           "datasource": "Prometheus",
-          "description": "ZooKeeper Pods Memory Usage",
           "fill": 1,
           "gridPos": {
             "h": 7,
-            "w": 6,
-            "x": 0,
-            "y": 9
+            "w": 8,
+            "x": 16,
+            "y": 0
           },
-          "id": 87,
+          "id": 29,
           "legend": {
             "avg": false,
             "current": false,
@@ -487,21 +310,20 @@ spec:
           "renderer": "flot",
           "seriesOverrides": [],
           "spaceLength": 10,
-          "stack": false,
+          "stack": true,
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(container_memory_usage_bytes{namespace=\"$kubernetes_namespace\",container=\"zookeeper\",pod=~\"$strimzi_cluster_name-$zk_node\"}) by (pod)",
-              "format": "time_series",
-              "intervalFactor": 1,
-              "legendFormat": "{{pod}}",
+              "expr": "sum(rate(kafka_producer_outgoing_byte_total{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"}[1m])) by (kubernetes_pod_name)",
+              "interval": "",
+              "legendFormat": "{{kubernetes_pod_name}}",
               "refId": "A"
             }
           ],
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Memory Usage",
+          "title": "(Source/Producers) Outgoing bytes per second",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -517,11 +339,11 @@ spec:
           },
           "yaxes": [
             {
-              "format": "bytes",
-              "label": null,
+              "format": "Bps",
+              "label": "Bytes/sec",
               "logBase": 1,
               "max": null,
-              "min": null,
+              "min": "0",
               "show": true
             },
             {
@@ -544,15 +366,14 @@ spec:
           "dashLength": 10,
           "dashes": false,
           "datasource": "Prometheus",
-          "description": "Aggregated ZooKeeper Pods CPU Usage",
           "fill": 1,
           "gridPos": {
             "h": 7,
             "w": 6,
-            "x": 6,
-            "y": 9
+            "x": 0,
+            "y": 7
           },
-          "id": 85,
+          "id": 30,
           "legend": {
             "avg": false,
             "current": false,
@@ -572,15 +393,19 @@ spec:
           "renderer": "flot",
           "seriesOverrides": [],
           "spaceLength": 10,
+          "span": 4,
           "stack": false,
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(rate(container_cpu_user_seconds_total{namespace=\"$kubernetes_namespace\",container=\"zookeeper\",pod=~\"$strimzi_cluster_name-$zk_node\"}[5m])) by (pod)",
+              "expr": "rate(process_cpu_seconds_total{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"}[1m])",
               "format": "time_series",
-              "intervalFactor": 1,
-              "legendFormat": "{{pod}}",
-              "refId": "A"
+              "hide": false,
+              "intervalFactor": 2,
+              "legendFormat": "{{kubernetes_pod_name}}",
+              "metric": "",
+              "refId": "A",
+              "step": 4
             }
           ],
           "thresholds": [],
@@ -603,263 +428,7 @@ spec:
           "yaxes": [
             {
               "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            },
-            {
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
-          }
-        },
-        {
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "Prometheus",
-          "description": "Kafka Broker Pods Disk Usage",
-          "fill": 1,
-          "gridPos": {
-            "h": 7,
-            "w": 6,
-            "x": 12,
-            "y": 9
-          },
-          "id": 89,
-          "legend": {
-            "avg": false,
-            "current": false,
-            "max": false,
-            "min": false,
-            "show": true,
-            "total": false,
-            "values": false
-          },
-          "lines": true,
-          "linewidth": 1,
-          "links": [],
-          "nullPointMode": "null",
-          "percentage": false,
-          "pointradius": 5,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "kubelet_volume_stats_available_bytes{namespace=\"$kubernetes_namespace\",persistentvolumeclaim=~\"data(-[0-9]+)?-$strimzi_cluster_name-zookeeper-[0-9]+\"}",
-              "format": "time_series",
-              "intervalFactor": 1,
-              "legendFormat": "{{persistentvolumeclaim}}",
-              "refId": "A"
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Available Disk Space",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "format": "bytes",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            },
-            {
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
-          }
-        },
-        {
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "Prometheus",
-          "description": "Open File Descriptors",
-          "fill": 1,
-          "gridPos": {
-            "h": 7,
-            "w": 6,
-            "x": 18,
-            "y": 9
-          },
-          "id": 96,
-          "legend": {
-            "avg": false,
-            "current": false,
-            "max": false,
-            "min": false,
-            "show": true,
-            "total": false,
-            "values": false
-          },
-          "lines": true,
-          "linewidth": 1,
-          "links": [],
-          "nullPointMode": "null",
-          "paceLength": 10,
-          "percentage": false,
-          "pointradius": 5,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "process_open_fds{namespace=\"$kubernetes_namespace\",pod=~\"$strimzi_cluster_name-zookeeper-[0-9+]\",container=\"zookeeper\"}",
-              "format": "time_series",
-              "hide": false,
-              "intervalFactor": 1,
-              "legendFormat": "{{pod}}",
-              "refId": "A"
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Open File Descriptors",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "format": "none",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            },
-            {
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
-          }
-        },
-        {
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "Prometheus",
-          "fill": 1,
-          "gridPos": {
-            "h": 7,
-            "w": 6,
-            "x": 0,
-            "y": 16
-          },
-          "id": 91,
-          "legend": {
-            "avg": false,
-            "current": false,
-            "max": false,
-            "min": false,
-            "show": true,
-            "total": false,
-            "values": false
-          },
-          "lines": true,
-          "linewidth": 1,
-          "links": [],
-          "nullPointMode": "null",
-          "percentage": false,
-          "pointradius": 5,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "sum(jvm_memory_bytes_used{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$zk_node\",strimzi_io_name=\"$strimzi_cluster_name-zookeeper\"}) by (kubernetes_pod_name)",
-              "format": "time_series",
-              "intervalFactor": 1,
-              "legendFormat": "{{kubernetes_pod_name}}",
-              "refId": "A"
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "JVM Memory Used",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "format": "decbytes",
-              "label": null,
+              "label": "Cores",
               "logBase": 1,
               "max": null,
               "min": null,
@@ -890,9 +459,9 @@ spec:
             "h": 7,
             "w": 6,
             "x": 6,
-            "y": 16
+            "y": 7
           },
-          "id": 93,
+          "id": 31,
           "legend": {
             "avg": false,
             "current": false,
@@ -912,21 +481,25 @@ spec:
           "renderer": "flot",
           "seriesOverrides": [],
           "spaceLength": 10,
+          "span": 4,
           "stack": false,
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(rate(jvm_gc_collection_seconds_sum{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$zk_node\",strimzi_io_name=\"$strimzi_cluster_name-zookeeper\"}[5m])) by (kubernetes_pod_name)",
+              "expr": "sum without(area)(jvm_memory_bytes_used{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"})",
               "format": "time_series",
-              "intervalFactor": 1,
+              "hide": false,
+              "intervalFactor": 2,
               "legendFormat": "{{kubernetes_pod_name}}",
-              "refId": "A"
+              "metric": "",
+              "refId": "A",
+              "step": 4
             }
           ],
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
-          "title": "JVM GC Time",
+          "title": "JVM Memory",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -942,8 +515,8 @@ spec:
           },
           "yaxes": [
             {
-              "format": "ms",
-              "label": null,
+              "format": "bytes",
+              "label": "Memory",
               "logBase": 1,
               "max": null,
               "min": null,
@@ -974,9 +547,9 @@ spec:
             "h": 7,
             "w": 6,
             "x": 12,
-            "y": 16
+            "y": 7
           },
-          "id": 95,
+          "id": 32,
           "legend": {
             "avg": false,
             "current": false,
@@ -996,21 +569,25 @@ spec:
           "renderer": "flot",
           "seriesOverrides": [],
           "spaceLength": 10,
+          "span": 4,
           "stack": false,
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(rate(jvm_gc_collection_seconds_count{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$zk_node\",strimzi_io_name=\"$strimzi_cluster_name-zookeeper\"}[5m])) by (kubernetes_pod_name)",
+              "expr": "sum without(gc)(rate(jvm_gc_collection_seconds_sum{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"}[5m]))",
               "format": "time_series",
-              "intervalFactor": 1,
+              "hide": false,
+              "intervalFactor": 2,
               "legendFormat": "{{kubernetes_pod_name}}",
-              "refId": "A"
+              "metric": "",
+              "refId": "A",
+              "step": 4
             }
           ],
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
-          "title": "JVM GC Count",
+          "title": "Time spent in GC",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -1026,8 +603,8 @@ spec:
           },
           "yaxes": [
             {
-              "format": "short",
-              "label": null,
+              "format": "percent",
+              "label": "% time in GC",
               "logBase": 1,
               "max": null,
               "min": null,
@@ -1059,9 +636,9 @@ spec:
             "h": 7,
             "w": 6,
             "x": 18,
-            "y": 16
+            "y": 7
           },
-          "id": 97,
+          "id": 37,
           "legend": {
             "avg": false,
             "current": false,
@@ -1086,7 +663,7 @@ spec:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "jvm_threads_current{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-zookeeper-[0-9+]\",strimzi_io_name=\"$strimzi_cluster_name-zookeeper\"}",
+              "expr": "jvm_threads_current{namespace=\"$kubernetes_namespace\",strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "{{kubernetes_pod_name}}",
@@ -1134,89 +711,98 @@ spec:
           }
         },
         {
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
+          "cacheTimeout": null,
+          "columns": [],
           "datasource": "Prometheus",
-          "description": "Amount of time it takes for the server to respond to a client request",
-          "fill": 1,
+          "fontSize": "100%",
           "gridPos": {
-            "h": 8,
+            "h": 7,
             "w": 8,
             "x": 0,
-            "y": 23
+            "y": 14
           },
-          "id": 10,
-          "legend": {
-            "avg": false,
-            "current": false,
-            "max": false,
-            "min": false,
-            "show": true,
-            "total": false,
-            "values": false
-          },
-          "lines": true,
-          "linewidth": 1,
+          "id": 34,
           "links": [],
-          "nullPointMode": "null",
-          "percentage": false,
-          "pointradius": 5,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "zookeeper_minrequestlatency{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$zk_node\"}",
-              "format": "time_series",
-              "intervalFactor": 1,
-              "legendFormat": "{{kubernetes_pod_name}}",
-              "refId": "A"
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Request Latency - Minimum",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
+          "pageSize": null,
+          "showHeader": true,
+          "sort": {
+            "col": 0,
+            "desc": true
           },
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
+          "styles": [
             {
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
+              "alias": "Time",
+              "align": "auto",
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "pattern": "Time",
+              "type": "date"
             },
             {
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
+              "alias": "Tasks",
+              "align": "auto",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": null,
+              "mappingType": 1,
+              "pattern": "Value",
+              "thresholds": [],
+              "type": "number",
+              "unit": "short"
+            },
+            {
+              "alias": "Connector",
+              "align": "auto",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "decimals": 0,
+              "pattern": "Metric",
+              "thresholds": [],
+              "type": "number",
+              "unit": "short"
             }
           ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
-          }
+          "targets": [
+            {
+              "expr": "sum(kafka_connect_worker_connector_paused_task_count{namespace=\"$kubernetes_namespace\",strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"}) by (connector) != 0",
+              "instant": true,
+              "interval": "",
+              "legendFormat": "[paused] {{connector}}",
+              "refId": "B"
+            },
+            {
+              "expr": "sum(kafka_connect_worker_connector_failed_task_count{namespace=\"$kubernetes_namespace\",strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"}) by (connector) != 0",
+              "instant": true,
+              "interval": "",
+              "legendFormat": "[failed] {{connector}}",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(kafka_connect_worker_connector_unassigned_task_count{namespace=\"$kubernetes_namespace\",strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"}) by (connector) != 0",
+              "instant": true,
+              "interval": "",
+              "legendFormat": "[unassigned] {{connector}}",
+              "refId": "C"
+            },
+            {
+              "expr": "sum(kafka_connect_worker_connector_destroyed_task_count{namespace=\"$kubernetes_namespace\",strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"}) by (connector) != 0",
+              "instant": true,
+              "interval": "",
+              "legendFormat": "[destroyed] {{connector}}",
+              "refId": "D"
+            }
+          ],
+          "title": "Connector task state with issues",
+          "transform": "timeseries_to_rows",
+          "type": "table"
         },
         {
           "aliasColors": {},
@@ -1224,15 +810,14 @@ spec:
           "dashLength": 10,
           "dashes": false,
           "datasource": "Prometheus",
-          "description": "Amount of time it takes for the server to respond to a client request",
           "fill": 1,
           "gridPos": {
-            "h": 8,
+            "h": 7,
             "w": 8,
             "x": 8,
-            "y": 23
+            "y": 14
           },
-          "id": 6,
+          "id": 35,
           "legend": {
             "avg": false,
             "current": false,
@@ -1247,26 +832,58 @@ spec:
           "links": [],
           "nullPointMode": "null",
           "percentage": false,
+          "pluginVersion": "6.7.1",
           "pointradius": 5,
           "points": false,
           "renderer": "flot",
           "seriesOverrides": [],
           "spaceLength": 10,
+          "span": 4,
           "stack": false,
           "steppedLine": false,
           "targets": [
             {
-              "expr": "zookeeper_avgrequestlatency{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$zk_node\"}",
+              "expr": "sum(kafka_connect_worker_connector_running_task_count{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"})",
               "format": "time_series",
+              "hide": false,
+              "instant": false,
+              "interval": "",
               "intervalFactor": 1,
-              "legendFormat": "{{kubernetes_pod_name}}",
-              "refId": "A"
+              "legendFormat": "running",
+              "metric": "",
+              "refId": "A",
+              "step": 4
+            },
+            {
+              "expr": "sum(kafka_connect_worker_connector_paused_task_count{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"})",
+              "interval": "",
+              "legendFormat": "paused",
+              "refId": "B"
+            },
+            {
+              "expr": "sum(kafka_connect_worker_connector_failed_task_count{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"})",
+              "interval": "",
+              "legendFormat": "failed",
+              "refId": "D"
+            },
+            {
+              "expr": "sum(kafka_connect_worker_connector_unassigned_task_count{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"})",
+              "interval": "",
+              "legendFormat": "unassigned",
+              "refId": "C"
+            },
+            {
+              "expr": "sum(kafka_connect_worker_connector_destroyed_task_count{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"})",
+              "instant": false,
+              "interval": "",
+              "legendFormat": "destroyed",
+              "refId": "E"
             }
           ],
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Request Latency - Average",
+          "title": "Connector task state",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -1282,14 +899,16 @@ spec:
           },
           "yaxes": [
             {
+              "decimals": 0,
               "format": "short",
-              "label": null,
+              "label": "Number of connector tasks",
               "logBase": 1,
               "max": null,
               "min": null,
               "show": true
             },
             {
+              "decimals": null,
               "format": "short",
               "label": null,
               "logBase": 1,
@@ -1309,15 +928,14 @@ spec:
           "dashLength": 10,
           "dashes": false,
           "datasource": "Prometheus",
-          "description": "Amount of time it takes for the server to respond to a client request",
           "fill": 1,
           "gridPos": {
-            "h": 8,
+            "h": 7,
             "w": 8,
             "x": 16,
-            "y": 23
+            "y": 14
           },
-          "id": 8,
+          "id": 36,
           "legend": {
             "avg": false,
             "current": false,
@@ -1329,10 +947,9 @@ spec:
           },
           "lines": true,
           "linewidth": 1,
-          "links": [],
           "nullPointMode": "null",
           "percentage": false,
-          "pointradius": 5,
+          "pointradius": 2,
           "points": false,
           "renderer": "flot",
           "seriesOverrides": [],
@@ -1341,17 +958,23 @@ spec:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "zookeeper_maxrequestlatency{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$zk_node\"}",
-              "format": "time_series",
-              "intervalFactor": 1,
-              "legendFormat": "{{kubernetes_pod_name}}",
+              "expr": "sum(kafka_consumer_connection_count{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"})",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "#consumer connections",
               "refId": "A"
+            },
+            {
+              "expr": "sum(kafka_producer_connection_count{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"})",
+              "interval": "",
+              "legendFormat": "#producer connections",
+              "refId": "B"
             }
           ],
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Request Latency - Maximum",
+          "title": "Connection count",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -1367,6 +990,7 @@ spec:
           },
           "yaxes": [
             {
+              "decimals": 0,
               "format": "short",
               "label": null,
               "logBase": 1,
@@ -1395,7 +1019,7 @@ spec:
       "tags": [
         "Strimzi",
         "Kafka",
-        "Zookeeper"
+        "Kafka Connect"
       ],
       "templating": {
         "list": [
@@ -1409,7 +1033,7 @@ spec:
             "multi": false,
             "name": "kubernetes_namespace",
             "options": [],
-            "query": "query_result(zookeeper_inmemorydatatree_nodecount)",
+            "query": "query_result(kafka_connect_worker_connector_count{strimzi_io_kind=~\"KafkaConnect.*\"})",
             "refresh": 1,
             "regex": "/.*namespace=\"([^\"]*).*/",
             "sort": 0,
@@ -1427,31 +1051,11 @@ spec:
             "includeAll": false,
             "label": "Cluster Name",
             "multi": false,
-            "name": "strimzi_cluster_name",
+            "name": "strimzi_connect_cluster_name",
             "options": [],
-            "query": "query_result(zookeeper_inmemorydatatree_nodecount{namespace=\"$kubernetes_namespace\"})",
+            "query": "query_result(kafka_connect_worker_connector_count{namespace=\"$kubernetes_namespace\", strimzi_io_kind=~\"KafkaConnect.*\"})",
             "refresh": 1,
             "regex": "/.*strimzi_io_cluster=\"([^\"]*).*/",
-            "sort": 0,
-            "tagValuesQuery": "",
-            "tags": [],
-            "tagsQuery": "",
-            "type": "query",
-            "useTags": false
-          },
-          {
-            "allValue": ".*",
-            "current": {},
-            "datasource": "Prometheus",
-            "hide": 0,
-            "includeAll": true,
-            "label": "Node",
-            "multi": false,
-            "name": "zk_node",
-            "options": [],
-            "query": "query_result(zookeeper_inmemorydatatree_nodecount{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\"})",
-            "refresh": 1,
-            "regex": "/.*statefulset_kubernetes_io_pod_name=\"$strimzi_cluster_name-([^\"]*).*/",
             "sort": 0,
             "tagValuesQuery": "",
             "tags": [],
@@ -1491,7 +1095,7 @@ spec:
         ]
       },
       "timezone": "",
-      "title": "Spring Music CDC - Zookeeper Stats",
-      "uid": "fc85de600d62d9841e9de00083b24b72",
+      "title": "Spring Music CDC - Kafka Connect Stats",
+      "uid": "39fb097dc2c5ebf8a7717cf78fc2f8f7",
       "version": 2
     }
