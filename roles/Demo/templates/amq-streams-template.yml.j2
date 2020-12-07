@@ -522,10 +522,9 @@ objects:
         transforms.outbox.table.field.event.id: event_id
         transforms.outbox.table.field.event.key: aggregate_id
         transforms.outbox.table.field.event.timestamp: event_timestamp
-        transforms.outbox.table.field.event.type: event_type
         transforms.outbox.table.field.event.payload.id: aggregate_id
         transforms.outbox.route.by.field: aggregate_type
-        transforms.outbox.table.fields.additional.placement: "event_id:envelope:eventId,event_timestamp:envelope:eventTimestamp,aggregate_id:envelope:aggregateId,aggregate_type:envelope:aggregateType"
+        transforms.outbox.table.fields.additional.placement: "event_id:envelope:eventId,event_timestamp:envelope:eventTimestamp,aggregate_id:envelope:aggregateId,aggregate_type:envelope:aggregateType,event_type:envelope:eventType"
 #  - kind: Route
 #    apiVersion: route.openshift.io/v1
 #    metadata:
