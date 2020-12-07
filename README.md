@@ -102,12 +102,6 @@ This playbook also makes some assumptions about some things within the cluster. 
 PRs welcome!
 
 - [Enabling schema registry and using AVRO serializtion/deserialization](https://github.com/edeandrea/debezium-demo-apb/issues/1)
-- Prometheus metrics
-  - [Add Prometheus metrics to the `KafkaConnect` cluster](https://github.com/edeandrea/debezium-demo-apb/issues/2)
-  - [Add Prometheus metrics to the `KafkaBridge`](https://github.com/edeandrea/debezium-demo-apb/issues/3)
-- Grafana dashboards
-  - [Add Grafana dashboards for the `KafkaConnect` cluster](https://github.com/edeandrea/debezium-demo-apb/issues/4)
-  - [Add Grafana dashboards for the `KafkaBridge`](https://github.com/edeandrea/debezium-demo-apb/issues/5)
 - [Add authorization on the topics to the different clients](https://github.com/edeandrea/debezium-demo-apb/issues/6)
 - [Getting Kafdrop to authenticate with the broker](https://github.com/edeandrea/debezium-demo-apb/issues/7)
   - This will allow removal of the `plain` listener on the broker
