@@ -1,6 +1,7 @@
-// camel-k: language=java dependency=camel-infinispan dependency=camel-kafka dependency=camel-jsonpath dependency=camel-jackson dependency=mvn:org.wildfly.security:wildfly-elytron:1.11.2.Final configmap=camelk-rhdg-client-config secret=albums-rhdg-cert-secret
+// camel-k: language=java dependency=camel-infinispan dependency=camel-kafka dependency=camel-jsonpath dependency=camel-jackson dependency=mvn:org.wildfly.security:wildfly-elytron:1.11.2.Final configmap=camelk-rhdg-client-config secret=albums-rhdg-cert-secret trait=quarkus.enabled=false
 package com.redhat.dbzdemo.rhdg;
 
+import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.infinispan.InfinispanConstants;
 import org.apache.camel.component.infinispan.InfinispanOperation;
@@ -38,8 +39,8 @@ public class RHDGUpdate extends RouteBuilder {
 		}
 	}
 
-  @Override
-  public void configure() throws Exception {
+	@Override
+	public void configure() throws Exception {
 		from("kafka:{{topic}}?groupId={{groupId}}&clientId={{clientId}}&autoOffsetReset=earliest")
 			.routeId("{{groupId}}")
 			.log("Processing event: ${body}")
@@ -52,7 +53,9 @@ public class RHDGUpdate extends RouteBuilder {
 					.to("direct:deleted")
 				.when()
 					.jsonpath("$.payload[?(@.eventType == 'ALBUM_UPDATED')]")
-					.to("direct:updated");
+					.to("direct:updated")
+				.otherwise()
+					.to("direct:noeventtype");
 						
 		from("direct:created")
 			.routeId("album-created")
@@ -78,6 +81,10 @@ public class RHDGUpdate extends RouteBuilder {
 			.setHeader(InfinispanConstants.OPERATION).constant(InfinispanOperation.PUT)
 			.setHeader(InfinispanConstants.KEY).method(this, "getAlbumId(${body})")
 			.setHeader(InfinispanConstants.VALUE).method(this, "getAlbum(${body})")
-				.to("infinispan:{{cacheName}}");
+			.to("infinispan:{{cacheName}}");
+
+		from("direct:noeventtype")
+		  .routeId("no-event-type")
+			.log(LoggingLevel.ERROR, "No eventType found for album ${headers[kafka.KEY]}");
 	}
 }
