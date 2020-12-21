@@ -37,6 +37,17 @@
         password: "{{ ocp_proj_user_pwd }}"
       register: k8s_auth_results
 
+    - name: Get RHDG Certificate
+      shell: "oc get secret albums-rhdg-cert-secret -n {{ proj_nm_demo }} -o template='{{ '{{' }}index .data \"tls.crt\"}}' | openssl base64 -d -A > {{ temp_dir }}/{{ rhdg_cert_nm }}"
+
+    - name: Create RHDG Keystore
+      shell: "keytool -importcert -keystore {{ temp_dir }}/{{ rhdg_keystore_nm }} -storepass password -file {{ temp_dir }}/{{ rhdg_cert_nm }} -trustcacerts -noprompt"
+
+    - name: Create RHDG Keystore Secret
+      include: ../../common/runOcShell.yml
+      vars:
+        oc_command: "oc create secret generic albums-rhdg-cert --from-file=albums-rhdg-cert={{ temp_dir }}/{{ rhdg_keystore_nm }}"
+
     - name: Install Camel-K RHDG Client
       k8s:
         api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"

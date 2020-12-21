@@ -6,6 +6,8 @@ template_nm_processed_db: prod-ocp4.yml
 cert_dir: "{{ temp_dir }}/certs"
 cert_secret_name: sso-app-secret
 ca_truststore_secret_name: ca-truststore
+rhdg_cert_nm: albums-rhdg-cert.crt
+rhdg_keystore_nm: albums-rhdg-cert.jks
 rh_sso:
   kafka_broker_secret: 2c74a420-4a2a-4688-be46-e2a089925110
   kafka_connect_secret: 1f100887-88b4-4d7a-ac1f-d4955908c55e

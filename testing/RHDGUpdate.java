@@ -1,4 +1,4 @@
-// camel-k: language=java dependency=camel-infinispan dependency=camel-kafka dependency=camel-jsonpath dependency=camel-jackson dependency=mvn:org.wildfly.security:wildfly-elytron:1.11.2.Final configmap=camelk-rhdg-client-config secret=albums-rhdg-cert-secret trait=quarkus.enabled=false
+// camel-k: language=java dependency=camel-infinispan dependency=camel-kafka dependency=camel-jsonpath dependency=camel-jackson dependency=mvn:org.wildfly.security:wildfly-elytron:1.11.2.Final configmap=camelk-rhdg-client-config secret=albums-rhdg-cert
 package com.redhat.dbzdemo.rhdg;
 
 import org.apache.camel.LoggingLevel;
@@ -41,8 +41,8 @@ public class RHDGUpdate extends RouteBuilder {
 
 	@Override
 	public void configure() throws Exception {
-		from("kafka:{{topic}}?groupId={{groupId}}&clientId={{clientId}}&autoOffsetReset=earliest")
-			.routeId("{{groupId}}")
+		from("kafka:outbox.Album.events?brokers=db-events-kafka-bootstrap:9092&groupId=albums-rhdg-update&clientId=albums-rhdg-update&autoOffsetReset=earliest")
+			.routeId("albums-rhdg-update")
 			.log("Processing event: ${body}")
 			.choice()
 				.when()
@@ -64,7 +64,7 @@ public class RHDGUpdate extends RouteBuilder {
 			.setHeader(InfinispanConstants.OPERATION).constant(InfinispanOperation.PUT)
 			.setHeader(InfinispanConstants.KEY).method(this, "getAlbumId(${body})")
 			.setHeader(InfinispanConstants.VALUE).method(this, "getAlbum(${body})")
-			.to("infinispan:{{cacheName}}");
+			.to("infinispan:albums");
 
 		from("direct:deleted")
 			.routeId("album-deleted")
@@ -72,7 +72,7 @@ public class RHDGUpdate extends RouteBuilder {
 			.unmarshal().json(JsonLibrary.Jackson, Map.class)
 			.setHeader(InfinispanConstants.OPERATION).constant(InfinispanOperation.REMOVE)
 			.setHeader(InfinispanConstants.KEY).method(this, "getAlbumId(${body})")
-			.to("infinispan:{{cacheName}}");
+			.to("infinispan:albums");
 
 		from("direct:updated")
 			.routeId("album-updated")
@@ -81,7 +81,7 @@ public class RHDGUpdate extends RouteBuilder {
 			.setHeader(InfinispanConstants.OPERATION).constant(InfinispanOperation.PUT)
 			.setHeader(InfinispanConstants.KEY).method(this, "getAlbumId(${body})")
 			.setHeader(InfinispanConstants.VALUE).method(this, "getAlbum(${body})")
-			.to("infinispan:{{cacheName}}");
+			.to("infinispan:albums");
 
 		from("direct:noeventtype")
 		  .routeId("no-event-type")
