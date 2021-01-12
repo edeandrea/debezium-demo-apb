@@ -5,10 +5,6 @@ metadata:
   namespace: "{{ proj_nm_demo }}"
   labels:
     app: camel-k
-spec:
-  configuration:
-    - type: repository
-      value: https://maven.repository.redhat.com/earlyaccess/all@id=redhat.ea
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -22,28 +18,33 @@ data:
     cacheName=albums
     broker=db-events-kafka-bootstrap:9092
     logging.level.com.redhat.dbzdemo.rhdg=DEBUG
-    quarkus.infinispan-client.server-list=albums-rhdg:11222
-    quarkus.infinispan-client.auth-server-name=albums-rhdg
-    quarkus.infinispan-client.auth-realm=default
-    quarkus.infinispan-client.auth-username=developer
-    quarkus.infinispan-client.auth-password=developer
-    quarkus.infinispan-client.sasl-mechanism=SCRAM-SHA-512
-    quarkus.infinispan-client.use-auth=true
-    quarkus.infinispan-client.trust-store=/etc/camel/conf.d/_secrets/albums-rhdg-cert/albums-rhdg-cert
-    quarkus.infinispan-client.trust-store-password=password
+
+#    For camel-k 1.2
+    camel.main.autowire-component-properties=false
+# For camel-k 1.3
+# camel.main.autowired-enabled=false
+    camel.component.infinispan.configuration.hosts=albums-rhdg:11222
+		camel.component.infinispan.configuration.configurationUri=file:{{ '{{' }}env:CAMEL_K_MOUNT_PATH_CONFIGMAPS}}/camelk-rhdg-client-config/hotrod-client.properties
 
   hotrod-client.properties: |2+
-    infinispan.client.hotrod.marshaller=org.infinispan.commons.marshall.UTF8StringMarshaller
-    infinispan.client.hotrod.java_serial_whitelist=java.util.ArrayList,java.util.LinkedHashMap,java.util.HashMap
-    infinispan.client.hotrod.async_executor_factory=org.infinispan.client.hotrod.impl.async.DefaultAsyncExecutorFactory
-    infinispan.client.hotrod.default_executor_factory.pool_size=1
-    infinispan.client.hotrod.hash_function_impl.2=org.infinispan.client.hotrod.impl.consistenthash.ConsistentHashV2
-    infinispan.client.hotrod.tcp_no_delay=true
-    infinispan.client.hotrod.tcp_keep_alive=false
-    infinispan.client.hotrod.request_balancing_strategy=org.infinispan.client.hotrod.impl.transport.tcp.RoundRobinBalancingStrategy
-    infinispan.client.hotrod.key_size_estimate=64
-    infinispan.client.hotrod.value_size_estimate=512
-    infinispan.client.hotrod.force_return_values=false
+	  infinispan.client.hotrod.use_auth=true
+		infinispan.client.hotrod.auth_username=developer
+		infinispan.client.hotrod.auth_password=developer
+		infinispan.client.hotrod.auth_realm=default
+		infinispan.client.hotrod.sasl_mechanism=SCRAM-SHA-512
+		infinispan.client.hotrod.use_ssl=true
+		infinispan.client.hotrod.trust_store_path=/etc/camel/conf.d/_secrets/albums-rhdg-cert-secret/tls.crt
+		infinispan.client.hotrod.marshaller=org.infinispan.commons.marshall.UTF8StringMarshaller
+		infinispan.client.hotrod.java_serial_whitelist=java.util.ArrayList,java.util.LinkedHashMap,java.util.HashMap
+		infinispan.client.hotrod.async_executor_factory=org.infinispan.client.hotrod.impl.async.DefaultAsyncExecutorFactory
+		infinispan.client.hotrod.default_executor_factory.pool_size=1
+		infinispan.client.hotrod.hash_function_impl.2=org.infinispan.client.hotrod.impl.consistenthash.ConsistentHashV2
+		infinispan.client.hotrod.tcp_no_delay=true
+		infinispan.client.hotrod.tcp_keep_alive=false
+		infinispan.client.hotrod.request_balancing_strategy=org.infinispan.client.hotrod.impl.transport.tcp.RoundRobinBalancingStrategy
+		infinispan.client.hotrod.key_size_estimate=64
+		infinispan.client.hotrod.value_size_estimate=512
+		infinispan.client.hotrod.force_return_values=false
 ---
 apiVersion: camel.apache.org/v1
 kind: Integration
@@ -57,7 +58,7 @@ spec:
     - type: configmap
       value: camelk-rhdg-client-config
     - type: secret
-      value: albums-rhdg-cert
+      value: albums-rhdg-cert-secret
   dependencies:
     - 'camel:kafka'
     - 'camel:jsonpath'
@@ -67,7 +68,7 @@ spec:
   sources:
     - name: RHDGUpdate.java
       content: |
-        // camel-k: language=java dependency=camel-infinispan dependency=camel-kafka dependency=camel-jsonpath dependency=camel-jackson dependency=mvn:org.wildfly.security:wildfly-elytron:1.11.2.Final configmap=camelk-rhdg-client-config secret=albums-rhdg-cert
+        // camel-k: language=java dependency=camel-infinispan dependency=camel-kafka dependency=camel-jsonpath dependency=camel-jackson dependency=mvn:org.wildfly.security:wildfly-elytron:1.11.2.Final configmap=camelk-rhdg-client-config secret=albums-rhdg-cert-secret
         package com.redhat.dbzdemo.rhdg;
 
         import org.apache.camel.LoggingLevel;
