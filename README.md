@@ -76,7 +76,7 @@ You'll need to replace the following variables with appropriate values:
 | `<OCP_API_URL>` | API url of your cluster |
 | `<OCP_ADMIN_USER_PASSWORD>` | Password for the OCP admin account |
 
-This playbook also makes some assumptions about some things within the cluster. These variables can be overridden with the `-e` switch when running the playbook.
+This playbook also makes some assumptions about some things within the cluster. The biggest assumption is that the playbook is installing everything into an empty cluster. The following variables can be overridden with the `-e` switch when running the playbook to customize some of the installation locations and configuration.
 
 | Description | Variable | Default Value |
 | ----------- | -------- | ------------- |
