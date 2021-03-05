@@ -71,16 +71,6 @@ spec:
                   key: database-password
             - name: SPRING_DATASOURCE_URL
               value: jdbc:mysql://summit-lab-spring-music-db/$(DB_NAME)
-          livenessProbe:
-            failureThreshold: 3
-            httpGet:
-              path: /actuator/health
-              port: 8080
-              scheme: HTTP
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 10
           name: spring-music
           ports:
             - containerPort: 8080
@@ -89,16 +79,6 @@ spec:
               protocol: TCP
             - containerPort: 8778
               protocol: TCP
-          readinessProbe:
-            failureThreshold: 3
-            httpGet:
-              path: /actuator/health
-              port: 8080
-              scheme: HTTP
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 10
   triggers:
     - type: ConfigChange
     - type: ImageChange
