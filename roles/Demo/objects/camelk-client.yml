@@ -19,10 +19,11 @@ data:
     broker=db-events-kafka-bootstrap:9092
     logging.level.com.redhat.dbzdemo.rhdg=DEBUG
 
-#    For camel-k 1.2
+    # For camel-k 1.2
     camel.main.autowire-component-properties=false
-# For camel-k 1.3
-# camel.main.autowired-enabled=false
+    
+    # For camel-k 1.3
+    # camel.main.autowired-enabled=false
     camel.component.infinispan.configuration.hosts=albums-rhdg:11222
     camel.component.infinispan.configuration.configurationUri=file:{{ '{{' }}env:CAMEL_K_MOUNT_PATH_CONFIGMAPS}}/camelk-rhdg-client-config/hotrod-client.properties
 
