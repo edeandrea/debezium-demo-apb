@@ -9,7 +9,7 @@
     - name: Install Camel-K Operator
       k8s:
         api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
-        namespace: "{{ proj_nm_rh_operators }}"
+        namespace: "{{ proj_nm_demo }}"
         definition: "{{ lookup('template', '../objects/camelk-operator.yml') }}"
 
     - name: Wait for CamelK operator to start

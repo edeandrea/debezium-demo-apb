@@ -9,13 +9,13 @@
     - name: Install AMQ Streams Operator
       k8s:
         api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
-        namespace: "{{ proj_nm_rh_operators }}"
+        namespace: "{{ proj_nm_amq_streams_operator }}"
         definition: "{{ lookup('template', '../objects/amq-streams-operator.yml') }}"
 
     - name: Wait for AMQ Streams operator to start
       k8s_info:
         api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
-        namespace: "{{ proj_nm_rh_operators }}"
+        namespace: "{{ proj_nm_amq_streams_operator }}"
         api_version: v1
         kind: Pod
         label_selectors:

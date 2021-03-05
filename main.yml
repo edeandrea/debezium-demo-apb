@@ -13,6 +13,9 @@
     ocp_proj_user_pwd: openshift
     temp_dir: /tmp/dbz-demo
     proj_nm_rh_operators: openshift-operators
+		proj_nm_amq_streams_operator: "{{ proj_nm_rh_operators }}"
+		proj_nm_container_security_operator: "{{ proj_nm_rh_operators }}"
+		proj_nm_serverless_operator: "{{ proj_nm_rh_operators }}"
   roles:
     - role: Demo
       tags:

@@ -84,6 +84,10 @@ This playbook also makes some assumptions about some things within the cluster. 
 | OCP user to install demo into | `ocp_proj_user` | `user1` |
 | OCP user password for above user | `ocp_proj_user_pwd` | `openshift` |
 | Project name to install demo into | `proj_nm_demo` | `demo` |
+| Project name to install _ALL_ global operators into | `proj_nm_rh_operators` | `openshift-operators` |
+| Project name to install AMQ Streams operator into | `proj_nm_amq_streams_operator` | `{{ proj_nm_rh_operators }}` |
+| Project name to install Container Security operator into | `proj_nm_container_security_operator` | `{{ proj_nm_rh_operators }}` |
+| Project name to install Serverless operator into | `proj_nm_serverless_operator` | `{{ proj_nm_rh_operators }}` |
 
 ## Additional Resources
 
