@@ -28,6 +28,7 @@ Once completed, the resulting output of everything in the OpenShift Topology vie
 
 ## Assumptions / Requirements
 
+1. Ansible > 2.9 is required for running the playbook
 1. The OpenShift `sso74-postgresql-persistent` template is installed in the `openshift` namespace
 1. OperatorHub is available with the following operators available
     - [AMQ Streams](https://access.redhat.com/documentation/en-us/red_hat_amq/7.6/html-single/using_amq_streams_on_openshift/index#key-features-operators_str)
